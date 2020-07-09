@@ -87,11 +87,13 @@ class App < Sinatra::Base
       standalone: true
     )
 
-    erb "layout-#{n}".to_sym, :locals => {
+    erb "layout-#{n}".to_sym,
+    :locals => {
       data: data,
       transfers: transfers,
       qrcode: svg,
-  }.merge(local_variables)
+    }.merge(local_variables),
+    content_type: 'image/svg+xml'
   end
 end
 
