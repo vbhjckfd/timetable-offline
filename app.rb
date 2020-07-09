@@ -37,7 +37,7 @@ def get_transfers(data)
     name = name.gsub('t0', 't')
     name = name.gsub('n0', 'n')
     name = name[1..-1] if name.chr == "a"
-    name = name + "a" if ["1", "2", "3", "4", "5", "6"].include? name
+    name = name + "a" if ["1", "2", "3", "4", "5", "6", "47"].include? name
     t['route_normalized'] = name
 
     transfers[type] << t
