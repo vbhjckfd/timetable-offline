@@ -64,8 +64,10 @@ viewBox="0 0 5906 4134.2"
 
   <% too_much_buses = transfers[:bus].length > 14 %>
 
-  <% let_transport.each_with_index do |r, index| %>
-      <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] - 295.28 %>" y="<%= 531.54 - 295.28 %>" width="590.53" height="590.53"/>
+  <% if !let_transport.nil? %>
+    <% let_transport.each_with_index do |r, index| %>
+        <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] - 295.28 %>" y="<%= 531.54 - 295.28 %>" width="590.53" height="590.53"/>
+    <% end %>
   <% end %>
 
 

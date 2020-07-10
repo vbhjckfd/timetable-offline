@@ -1,6 +1,5 @@
 require 'sinatra/base'
 require 'faraday'
-require 'pdfkit'
 
 def detect_layout(transfers)
   routeTypesCount = transfers.keys.length
@@ -37,6 +36,7 @@ def get_transfers(data)
     name = name.gsub('t0', 't')
     name = name.gsub('n0', 'n')
     name = name[1..-1] if name.chr == "a"
+    name = 'airport' if name == "еропорt"
     name = name + "a" if ["1", "2", "3", "4", "5", "6", "47"].include? name
     t['route_normalized'] = name
 
@@ -47,36 +47,32 @@ end
 
 class App < Sinatra::Base
 
-  get '/:code.pdf' do
-    stop_code = params['code']
-    # svg = call env.merge("PATH_INFO" => "/#{stop_code}")
+  # get '/:code.pdf' do
+  #   require 'pdfkit'
 
-    # PDFKit.configure do |config|
-    #   config.root_url = "http://localhost:4567"
-    # end
 
-    # raw_svg = svg[2].pop
+  #   stop_code = params['code']
 
-    kit = PDFKit.new("http://localhost:4567/#{stop_code}", {
-        'page-height' => '350mm',
-        'page-width'=> '500mm',
-        'margin-top' => 0,
-        'margin-right' => 0,
-        'margin-bottom' => 0,
-        'margin-left' => 0,
-        'zoom' => 0.5,
-    })
+  #   kit = PDFKit.new("http://localhost:4567/#{stop_code}", {
+  #       'page-height' => '350mm',
+  #       'page-width'=> '500mm',
+  #       'margin-top' => 0,
+  #       'margin-right' => 0,
+  #       'margin-bottom' => 0,
+  #       'margin-left' => 0,
+  #       'zoom' => 0.5,
+  #   })
 
-    pdf = kit.to_pdf
-    if (params[:download])
-      return 'Not implemented'
-      io = StringIO.new(pdf)
-      send_file(io, :disposition => 'attachment', :filename => "#{stop_code}.pdf")
-    end
+  #   pdf = kit.to_pdf
+  #   if (params[:download])
+  #     return 'Not implemented'
+  #     io = StringIO.new(pdf)
+  #     send_file(io, :disposition => 'attachment', :filename => "#{stop_code}.pdf")
+  #   end
 
-    content_type 'application/pdf'
-    pdf
-  end
+  #   content_type 'application/pdf'
+  #   pdf
+  # end
 
   get '/:code' do
     stop_code = params['code']

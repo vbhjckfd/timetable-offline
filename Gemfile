@@ -5,6 +5,10 @@ ruby '~> 2.5'
 
 gem 'sinatra'
 
-gem 'pdfkit'
+# gem 'wkhtmltopdf-binary'
+# gem 'pdfkit'
+
+gem 'parallel'
+gem 'ruby-progressbar'
 
 gem 'faraday'

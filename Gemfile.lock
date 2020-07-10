@@ -6,10 +6,11 @@ GEM
     multipart-post (2.1.1)
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
-    pdfkit (0.8.4.3.1)
+    parallel (1.19.2)
     rack (2.2.3)
     rack-protection (2.0.8.1)
       rack
+    ruby-progressbar (1.10.1)
     ruby2_keywords (0.0.2)
     sinatra (2.0.8.1)
       mustermann (~> 1.0)
@@ -23,7 +24,8 @@ PLATFORMS
 
 DEPENDENCIES
   faraday
-  pdfkit
+  parallel
+  ruby-progressbar
   sinatra
 
 RUBY VERSION

@@ -68,9 +68,9 @@ viewBox="0 0 5906 4134.2"
     <% let_transport.each_with_index do |r, index| %>
 
         <% if transfers[:tram] %>
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] %>" y="496.1" width="1003.97"/>
+          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] %>" y="496.1" width="1003.97" height="1003.97"/>
         <% else %>
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] + 127.75 %>" y="496.1" width="862.28"/>
+          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] + 127.75 %>" y="496.1" width="862.28" height="862.28"/>
         <% end %>
 
     <% end %>
