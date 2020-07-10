@@ -5,7 +5,7 @@ stops = [727,745,744,707,354,317,733,197,752,1016,803,802,765,764,769,770,621,56
 
 stops.select!{|s| s < 1000 }
 
-Parallel.each_with_index(stops, in_threads: 20, progress: "Generating") do |stop, index|
+Parallel.each_with_index(stops, in_threads: 10, progress: "Generating") do |stop, index|
     #url = "https://offline.lad.lviv.ua/#{stop}"
     url = "http://localhost:4567/#{stop}"
     file_path = "/Users/mholyak/Downloads/sticker-svg/#{stop}.pdf"
