@@ -1,6 +1,6 @@
 require 'sinatra/base'
 require 'faraday'
-require 'rqrcode'
+require 'pdfkit'
 
 def detect_layout(transfers)
   routeTypesCount = transfers.keys.length
@@ -46,6 +46,38 @@ def get_transfers(data)
 end
 
 class App < Sinatra::Base
+
+  get '/:code.pdf' do
+    stop_code = params['code']
+    # svg = call env.merge("PATH_INFO" => "/#{stop_code}")
+
+    # PDFKit.configure do |config|
+    #   config.root_url = "http://localhost:4567"
+    # end
+
+    # raw_svg = svg[2].pop
+
+    kit = PDFKit.new("http://localhost:4567/#{stop_code}", {
+        'page-height' => '350mm',
+        'page-width'=> '500mm',
+        'margin-top' => 0,
+        'margin-right' => 0,
+        'margin-bottom' => 0,
+        'margin-left' => 0,
+        'zoom' => 0.5,
+    })
+
+    pdf = kit.to_pdf
+    if (params[:download])
+      return 'Not implemented'
+      io = StringIO.new(pdf)
+      send_file(io, :disposition => 'attachment', :filename => "#{stop_code}.pdf")
+    end
+
+    content_type 'application/pdf'
+    pdf
+  end
+
   get '/:code' do
     stop_code = params['code']
     api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
@@ -64,26 +96,16 @@ class App < Sinatra::Base
 
     transfers = get_transfers(data)
 
-    qrcode = RQRCode::QRCode.new("https://lad.lviv.ua/#{stop_code}")
-
     n = detect_layout(transfers)
-
-    svg = qrcode.as_svg(
-      offset: 0,
-      color: '000',
-      shape_rendering: 'crispEdges',
-      module_size: 6,
-      standalone: true
-    )
 
     erb "layout-#{n}".to_sym,
     :locals => {
       data: data,
       transfers: transfers,
-      qrcode: svg,
     },
     content_type: 'image/svg+xml'
   end
+
 end
 
 App.run!

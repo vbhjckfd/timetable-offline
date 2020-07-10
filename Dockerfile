@@ -5,6 +5,8 @@ ENV APP_HOME /application
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
+RUN apt-get install openssl build-essential xorg libssl-dev libxrender-dev wkhtmltopdf
+
 ADD Gemfile* $APP_HOME/
 
 RUN bundle config set without 'development test' && bundle install

@@ -5,6 +5,6 @@ ruby '~> 2.5'
 
 gem 'sinatra'
 
-gem 'faraday'
+gem 'pdfkit'
 
-gem 'rqrcode'
+gem 'faraday'
