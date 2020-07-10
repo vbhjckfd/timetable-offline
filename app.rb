@@ -66,18 +66,7 @@ class App < Sinatra::Base
 
     qrcode = RQRCode::QRCode.new("https://lad.lviv.ua/#{stop_code}")
 
-    local_variables = {}
-
     n = detect_layout(transfers)
-    local_variables = {}
-
-    if (3 == n)
-
-    elsif (8 == n)
-
-    else
-
-    end
 
     svg = qrcode.as_svg(
       offset: 0,
@@ -92,7 +81,7 @@ class App < Sinatra::Base
       data: data,
       transfers: transfers,
       qrcode: svg,
-    }.merge(local_variables),
+    },
     content_type: 'image/svg+xml'
   end
 end

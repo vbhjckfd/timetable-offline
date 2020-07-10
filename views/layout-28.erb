@@ -556,6 +556,11 @@ viewBox="0 0 5906 4134.2"
     .fil12 {fill:#7D8A92;fill-rule:nonzero}
     .fnt1 {font-weight:normal;font-size:100.01px;font-family:'Myriad Pro'}
     .fnt0 {font-weight:600;font-size:416.7px;font-family:'Myriad Pro Light'}
+
+    .footer .fil7 {fill:#2B2A29}
+    .footer .fil8 {fill:#E31E24}
+    .footer .fnt1 {font-weight:normal;font-size:100.01px;font-family:'Myriad Pro'}
+    .footer .fnt0 {font-weight:600;font-size:416.7px;font-family:'Myriad Pro Light'}
    ]]>
   </style>
  </defs>
@@ -611,22 +616,7 @@ viewBox="0 0 5906 4134.2"
 
   <% if !too_much_buses %>
 
-    <g id="footer">
-
-      <text x="927.96" y="3488.65"  class="fil13 fnt0">lad.lviv.ua/</text>
-      <text x="2889.38" y="3488.65"  class="fil14 fnt0"><%= data['code'] %></text>
-      <text x="927.96" y="3901.11"  class="fil13 fnt0">SMS </text>
-      <text x="2461.43" y="3901.11"  class="fil13 fnt0"> </text>
-      <text x="2547.68" y="3901.11"  class="fil13 fnt0">на 2214</text>
-      <text x="1791.37" y="3901.11"  class="fil14 fnt0"><%= data['code'] %></text>
-      <text x="4125.14" y="3738.73"  class="fil15 fnt1">варт</text>
-      <text x="4701.99" y="3738.73"  class="fil15 fnt1">зг</text>
-      <text x="4320.56" y="3738.73"  class="fil15 fnt1">ість </text>
-      <text x="4783.6" y="3738.73"  class="fil15 fnt1">ідно з тарифами</text>
-      <text x="4501.77" y="3738.73"  class="fil15 fnt1">SMS </text>
-      <text x="4125.14" y="3858.94"  class="fil15 fnt1">вашого оператора</text>
-
-    </g>
+      <%= erb :footer, :locals => {data: data} %>
 
   <% end %>
 
