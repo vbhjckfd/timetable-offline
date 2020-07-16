@@ -37,7 +37,7 @@ def get_transfers(data)
     name = name.gsub('n0', 'n')
     name = name[1..-1] if name.chr == "a"
     name = 'airport' if name == "еропорt"
-    name = name + "a" if ["1", "2", "3", "4", "5", "6", "47"].include? name
+    name = name + "a" if ["1", "2", "3", "4", "5", "6", "36", "47"].include? name
     t['route_normalized'] = name
 
     transfers[type] << t
@@ -78,7 +78,7 @@ class App < Sinatra::Base
     stop_code = params['code']
     api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
 
-    response = Faraday.get "#{api_url}/stops/#{stop_code}"
+    response = Faraday.get "#{api_url}/stops/#{stop_code}?skipTimetableData=1"
 
     halt response.status, "Код зупинки має бути числом, на кшталт 128" if response.status == 400
     halt response.status, "Неправильний код зупинки" if response.status == 404
