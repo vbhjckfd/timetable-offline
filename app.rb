@@ -1,5 +1,6 @@
 require 'sinatra/base'
 require 'faraday'
+require 'rqrcode'
 
 def detect_layout(transfers)
   routeTypesCount = transfers.keys.length
@@ -94,10 +95,20 @@ class App < Sinatra::Base
 
     n = detect_layout(transfers)
 
+    qrcode = RQRCode::QRCode.new("https://lad.lviv.ua/#{stop_code}")
+    svg = qrcode.as_svg(
+      offset: 0,
+      color: '000',
+      shape_rendering: 'crispEdges',
+      module_size: 6,
+      standalone: true
+    ).to_s.sub('<?xml version="1.0" standalone="yes"?>', '')
+
     erb "layout-#{n}".to_sym,
     :locals => {
       data: data,
       transfers: transfers,
+      qrcode: svg,
     },
     content_type: 'image/svg+xml'
   end

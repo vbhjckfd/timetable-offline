@@ -8,19 +8,6 @@ viewBox="0 0 5906 4134.2"
   <style type="text/css">
    <![CDATA[
     <%= erb :fonts %>
-    @font-face {
-      font-family: "Myriad Pro Semibold";
-      font-variant: normal;
-      font-style: normal;
-      font-weight: normal;
-      src: url("/fonts/MyriadPro/MyriadPro-Semibold.otf") format(opentype);
-    }
-    @font-face {
-      font-family: "Myriad Pro Light";
-      font-variant: normal;
-      font-weight: 600;
-      src: url("/fonts//MyriadPro-Light.ttf") format(truetype);
-    }
     .str0 {stroke:#9D9E9E;stroke-width:2.36;stroke-miterlimit:22.9256}
     .fil8 {fill:none}
     .fil2 {fill:#FEFEFE}
@@ -111,6 +98,6 @@ viewBox="0 0 5906 4134.2"
  </g>
 
 
-  <%= erb :footer, :locals => {data: data} %>
+  <%= erb :footer, :locals => {data: data, qrcode: qrcode} %>
 
 </svg>

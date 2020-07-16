@@ -8,6 +8,8 @@ gem 'sinatra'
 # gem 'wkhtmltopdf-binary'
 # gem 'pdfkit'
 
+gem 'rqrcode'
+
 gem 'parallel'
 gem 'ruby-progressbar'
 
