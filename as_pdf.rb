@@ -12,7 +12,7 @@ Parallel.each_with_index(stops, in_threads: 5, progress: "Generating") do |stop,
     #p file_path
 
     if !File.exist?(file_path) || ARGV[0]
-        result = system("wkhtmltopdf -q --page-height 350mm --page-width 500mm -B 0 -L 0 -R 0 -T 0 --zoom 0.5 '#{url}' '#{file_path}'")
+        result = system("wkhtmltopdf -q --page-height 350mm --page-width 500mm -B 0 -L 0 -R 0 -T 0 --zoom 0.5 --disable-external-links '#{url}' '#{file_path}'")
         puts url if (!result)
     end
 end

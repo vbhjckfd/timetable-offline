@@ -1,6 +1,7 @@
 require 'sinatra/base'
 require 'faraday'
 require 'rqrcode'
+require 'base64'
 
 def detect_layout(transfers)
   routeTypesCount = transfers.keys.length
