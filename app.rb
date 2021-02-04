@@ -2,6 +2,7 @@ require 'sinatra/base'
 require 'faraday'
 require 'rqrcode'
 require 'base64'
+require "active_support/all"
 
 def detect_layout(transfers)
   routeTypesCount = transfers.keys.length
@@ -49,6 +50,34 @@ end
 
 class App < Sinatra::Base
 
+  get '/:code/schema' do
+    stop_code = params['code']
+    api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
+
+    response = Faraday.get "#{api_url}/stops/#{stop_code}/static"
+
+    halt response.status, "Код зупинки має бути числом, на кшталт 128" if response.status == 400
+    halt response.status, "Неправильний код зупинки" if response.status == 404
+
+    begin
+      data = JSON.parse(response.body)
+    rescue JSON::ParserError => e
+      data = nil
+    end
+    halt 503 if data.nil?
+
+    transfers = get_transfers(data)
+
+    data['name_en'] = 'ENG_' << data['name']
+
+    erb "scheme".to_sym,
+    :locals => {
+      data: data,
+      transfers: transfers
+    },
+    content_type: 'image/svg+xml'
+  end
+
   # get '/:code.pdf' do
   #   require 'pdfkit'
 
@@ -80,7 +109,7 @@ class App < Sinatra::Base
     stop_code = params['code']
     api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
 
-    response = Faraday.get "#{api_url}/stops/#{stop_code}?skipTimetableData=1"
+    response = Faraday.get "#{api_url}/stops/#{stop_code}/static"
 
     halt response.status, "Код зупинки має бути числом, на кшталт 128" if response.status == 400
     halt response.status, "Неправильний код зупинки" if response.status == 404
