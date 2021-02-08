@@ -4,6 +4,8 @@ require 'rqrcode'
 require 'base64'
 require "active_support/all"
 
+require_relative './eng_names.rb'
+
 def detect_layout(transfers)
   routeTypesCount = transfers.keys.length
   routesCount = transfers.values.flatten.length
@@ -43,6 +45,10 @@ def get_transfers(data)
     name = name + "a" if ["1", "2", "3", "4", "5", "6", "36", "47"].include? name
     t['route_normalized'] = name
 
+    eng_data = ENG_NAMES.find{|i| i[:code] == t['end_stop_code'].to_i}
+
+    t['eng_end_stop_name'] = eng_data[:eng_name] || ""
+
     transfers[type] << t
   end
   transfers = transfers.delete_if { |k, v| v.empty? }
@@ -68,7 +74,9 @@ class App < Sinatra::Base
 
     transfers = get_transfers(data)
 
-    data['name_en'] = 'ENG_' << data['name']
+    eng_data = ENG_NAMES.find{|i| i[:code] == stop_code.to_i}
+
+    data['name_en'] = eng_data[:eng_name] || ""
 
     erb "scheme".to_sym,
     :locals => {
