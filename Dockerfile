@@ -1,4 +1,4 @@
-FROM ruby:2.5.5-slim
+FROM ruby:2.7.2-slim
 
 # Change to the application's directory
 ENV APP_HOME /application

@@ -1,20 +1,23 @@
 <%
 
-font_data = ['./public/fonts/MyriadPro/MyriadPro-Semibold.otf', './public/fonts/MyriadPro-Light1.ttf'].map do |path|
+font_data = [
+  './public/fonts/MyriadPro/MyriadPro-Regular.otf',
+  './public/fonts/MyriadPro/MyriadPro-Semibold.otf'
+  ].map do |path|
   Base64.strict_encode64(File.open(path).read)
 end
 
 %>
 
     @font-face {
-      font-family: "First";
+      font-family: "Myriad Pro";
       font-variant: normal;
       font-style: normal;
       font-weight: normal;
       src: url("data:font/truetype;charset=utf-8;base64,<%= font_data[0] %>") format(opentype);
     }
     @font-face {
-      font-family: "Second";
+      font-family: "Myriad Pro Light";
       font-variant: normal;
       font-weight: 600;
       src: url("data:font/truetype;charset=utf-8;base64,<%= font_data[1] %>") format(truetype);
