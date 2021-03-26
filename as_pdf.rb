@@ -2,7 +2,7 @@ require 'parallel'
 require 'ruby-progressbar'
 require 'json'
 
-all_stops_raw = `curl https://api.lad.lviv.ua/stops`
+all_stops_raw = `curl https://api.lad.lviv.ua/stops.json`
 all_stops_hash = JSON.parse all_stops_raw
 
 stops = all_stops_hash.map {|s| s['code']}
