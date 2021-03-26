@@ -45,7 +45,7 @@ def get_transfers(data)
     name = name + "a" if ["1", "2", "3", "4", "5", "6", "36", "47"].include? name
     t['route_normalized'] = name
 
-    eng_data = ENG_NAMES.find{|i| i[:code] == t['end_stop_code'].to_i}
+    eng_data = ENG_NAMES.find{|i| i[:code] == t['end_stop_code'].to_i} || {}
 
     t['eng_end_stop_name'] = eng_data[:eng_name] || ""
 
@@ -74,7 +74,7 @@ class App < Sinatra::Base
 
     transfers = get_transfers(data)
 
-    eng_data = ENG_NAMES.find{|i| i[:code] == stop_code.to_i}
+    eng_data = ENG_NAMES.find{|i| i[:code] == stop_code.to_i} || {}
 
     data['name_en'] = eng_data[:eng_name] || ""
 
