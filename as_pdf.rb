@@ -2,11 +2,18 @@ require 'parallel'
 require 'ruby-progressbar'
 require 'json'
 
-all_stops_raw = `curl https://api.lad.lviv.ua/stops.json`
+all_stops_raw = `curl -s https://api.lad.lviv.ua/stops.json`
 all_stops_hash = JSON.parse all_stops_raw
 
 stops = all_stops_hash.map {|s| s['code']}
-stops = [6]
+#stops = [40]
+
+# filtered_stops = stops.select {|code|
+#     stop_data = JSON.parse `curl -s https://api.lad.lviv.ua/stops/#{code}/static`
+#     0 == stop_data["transfers"].length
+# }
+
+# puts(filtered_stops);
 
 Parallel.each_with_index(stops, in_threads: 5, progress: "Generating") do |stop, index|
     #url = "https://offline.lad.lviv.ua/#{stop}"

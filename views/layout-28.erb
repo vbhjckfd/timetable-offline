@@ -24,16 +24,6 @@
     .fil3 {fill:#FEFEFE;fill-rule:nonzero}
     .fil6 {fill:#FFED00;fill-rule:nonzero}
     .fil12 {fill:#7D8A92;fill-rule:nonzero}
-
-    .footer .fil7 {fill:#2B2A29}
-    .footer .fil8 {fill:#E31E24}
-<<<<<<< HEAD
-
-    .footer .fnt0 {font-weight:600;font-size:416.7px;font-family:'Myriad Pro'}
-    .footer .fnt1 {font-weight:normal;font-size:100.01px;font-family:'Myriad Pro Light'}
-
-=======
->>>>>>> origin/master
    ]]>
   </style>
  </defs>
@@ -77,8 +67,18 @@
         <image xlink:href="/icons/ico-trolleybus.svg" x="287.8000183105469" y="236.26" width="428.4" height="631.51"/>
       <% end %>
 
+      <% cumulative_offset = 0; %>
       <% let_transport.each_with_index do |r, index| %>
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] - 295.28 %>" y="<%= 531.54 - 295.28 %>" width="590.53" height="590.53"/>
+          <%
+            additional_offset = r['route_normalized'].end_with?('a') ? 265 : 0
+            let_icon_width = 590.53 + additional_offset;
+          %>
+
+          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] - 295.28 + cumulative_offset %>" y="<%= 531.54 - 295.28 %>" width="<%= let_icon_width %>" height="590.53"/>
+
+          <%
+            cumulative_offset += additional_offset
+          %>
       <% end %>
     </g>
   <% end %>

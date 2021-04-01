@@ -25,14 +25,6 @@ viewBox="0 0 5906 4134.2"
     .fil14 {fill:#E31E24}
     .fil15 {fill:#2B2A29}
     .fil13 {fill:#2B2A29}
-<<<<<<< HEAD
-
-    .footer .fil7 {fill:#2B2A29}
-    .footer .fil8 {fill:#E31E24}
-    .footer .fnt0 {font-weight:600;font-size:416.7px;font-family:'Myriad Pro Light'}
-    .footer .fnt1 {font-weight:normal;font-size:100.01px;font-family:'Myriad Pro'}
-=======
->>>>>>> origin/master
    ]]>
   </style>
  </defs>
@@ -56,12 +48,24 @@ viewBox="0 0 5906 4134.2"
   <% end %>
 
   <% if !only_buses %>
+    <% cumulative_offset = 0 %>
     <% let_transport.each_with_index do |r, index| %>
 
         <% if transfers[:tram] %>
           <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] %>" y="496.1" width="1003.97" height="1003.97"/>
         <% else %>
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] + 127.75 %>" y="496.1" width="862.28" height="862.28"/>
+
+          <%
+            additional_offset = r['route_normalized'].end_with?('a') ? 439.41 : 0
+            let_icon_width = 862.28 + additional_offset;
+          %>
+
+          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] + 127.75 + cumulative_offset %>" width="<%= let_icon_width %>" y="496.1"  height="862.28"/>
+
+          <%
+            cumulative_offset += additional_offset
+          %>
+
         <% end %>
 
     <% end %>
