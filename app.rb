@@ -47,7 +47,7 @@ def get_transfers(data)
 
     eng_data = ENG_NAMES.find{|i| i[:code] == t['end_stop_code'].to_i}
 
-    t['eng_end_stop_name'] = eng_data[:eng_name] || ""
+    t['eng_end_stop_name'] = eng_data ? eng_data[:eng_name] : ""
 
     transfers[type] << t
   end
