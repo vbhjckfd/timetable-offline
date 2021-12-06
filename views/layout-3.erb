@@ -25,6 +25,9 @@ viewBox="0 0 5906 4134.2"
   </style>
  </defs>
 
+  <%= erb :header, :locals => {data: data} %>
+
+  <g>
   <% if transfers[:tram] %>
       <g>
         <path class="fil0" d="M921.1 2101.92l-324.67 0c-15.93,0.37 -28.56,13.58 -28.2,29.51 0.35,15.43 12.78,27.85 28.2,28.2l324.67 0c15.94,0.36 29.15,-12.26 29.51,-28.2 0.36,-15.93 -12.26,-29.14 -28.2,-29.51 -0.43,0 -0.87,0 -1.31,0z"/>
@@ -44,6 +47,7 @@ viewBox="0 0 5906 4134.2"
   <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] %>" y="1001.8" width="1122.14" height="1122.14" />
 
   <% end %>
+  </g>
 
   <%= erb :footer, :locals => {data: data, qrcode: qrcode} %>
 

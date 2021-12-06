@@ -31,6 +31,10 @@
   </style>
  </defs>
 
+ <%= erb :header, :locals => {data: data} %>
+
+ <g transform="translate(0, 350)">
+
  <% let_transport = transfers[:tram] || transfers[:trol] %>
  <% xs = [1240.26, 1919.45, 2598.64, 3278.65, 3957.84, 4637.03, 5315.4] %>
  <% buses_in_3_lines = transfers[:bus] && transfers[:bus].length > 14 %>
@@ -102,7 +106,7 @@
     </g>
   <% end %>
 
-
+  </g>
 
       <%= erb :footer, :locals => {data: data, qrcode: qrcode} %>
 

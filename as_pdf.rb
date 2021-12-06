@@ -5,8 +5,8 @@ require 'json'
 all_stops_raw = `curl https://api.lad.lviv.ua/stops.json`
 all_stops_hash = JSON.parse all_stops_raw
 
-stops = all_stops_hash.map {|s| s['code']}
-#stops = [705]
+stops = all_stops_hash.map {|s| s['code']}.sort().reverse()
+#stops = [13]
 
 Parallel.each_with_index(stops, in_threads: 5, progress: "Generating") do |stop, index|
     url = "https://offline.lad.lviv.ua/#{stop}/schema"
