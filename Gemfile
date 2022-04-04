@@ -1,16 +1,15 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '~> 2.5'
+ruby '~> 3.1'
 
-gem 'activesupport', '~> 5.0', '>= 5.0.0.1'
+gem 'activesupport', '~> 7.0.2', '>= 7.0.2.3'
 
+gem 'eventmachine'
+gem 'thin'
 gem 'sinatra'
 
-# gem 'wkhtmltopdf-binary'
-# gem 'pdfkit'
-
-gem 'rqrcode'
+gem 'rqrcode', '~> 2.1'
 
 gem 'parallel'
 gem 'ruby-progressbar'
