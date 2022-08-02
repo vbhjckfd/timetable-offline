@@ -51,6 +51,18 @@ def get_transfers(data)
 
     transfers[type] << t
   end
+
+  if [529, 530, 535, 392].include? data['code']
+    transfers[:trol] << {
+      "eng_end_stop_name" => '',
+      "vehicle_type" => 'trol',
+      "route" => 'Tp38',
+      "route_normalized" => 't38',
+    }
+  end
+
+  puts transfers
+
   transfers = transfers.delete_if { |k, v| v.empty? }
 end
 
