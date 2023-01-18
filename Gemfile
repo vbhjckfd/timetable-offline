@@ -3,7 +3,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '~> 3.1'
 
-gem 'activesupport', '~> 7.0.2', '>= 7.0.2.3'
+gem 'activesupport', '~> 7.0.4'
 
 gem 'eventmachine'
 gem 'thin'
