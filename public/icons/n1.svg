@@ -1,26 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Creator: CorelDRAW 2019 (64-Bit) -->
-<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="591px" height="591px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
-viewBox="0 0 150.24 150.24"
- xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Creator: CorelDRAW 2021.5 -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="590px" height="590px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 44.11 44.11"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
  <defs>
   <style type="text/css">
    <![CDATA[
-    .fil1 {fill:#FFED00}
-    .fil0 {fill:#000066}
-    .fil2 {fill:#FFED00;fill-rule:nonzero}
+    .fil0 {fill:#102070}
+    .fil2 {fill:#FFE000}
+    .fil1 {fill:#FFE000;fill-rule:nonzero}
    ]]>
   </style>
  </defs>
  <g id="Layer_x0020_1">
   <metadata id="CorelCorpID_0Corel-Layer"/>
-  <g id="_2527405721104">
-   <circle class="fil0" cx="75.12" cy="75.12" r="75.12"/>
-   <g>
-    <polygon class="fil1" points="112.52,39.19 123.78,39.19 123.78,112.23 112.52,112.23 112.52,81.34 84.2,81.34 84.2,112.23 72.95,112.23 72.95,39.19 84.2,39.19 84.2,70.09 112.52,70.09 "/>
-    <polygon class="fil2" points="42.51,112.69 42.51,57.07 26.46,66.35 26.46,54.95 53.81,39.21 53.81,112.69 "/>
-   </g>
-  </g>
+  <circle class="fil0" cx="22.05" cy="22.05" r="22.05"/>
+  <polygon class="fil1" points="18.04,32.88 14.44,32.88 14.44,17.11 9.8,19.79 9.8,15.71 18.38,10.76 18.38,32.88 "/>
+  <polygon class="fil2" points="23.41,32.88 26.34,32.88 26.34,26.63 32.37,26.63 32.37,32.88 35.3,32.88 35.3,17.45 32.37,17.45 32.37,23.7 26.34,23.7 26.34,17.45 23.41,17.45 "/>
  </g>
 </svg>

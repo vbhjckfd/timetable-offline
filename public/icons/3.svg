@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="590px" height="590px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 87.07 87.07"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil0 {fill:#0E4F95}
+    .fil1 {fill:#FFFFFF;fill-rule:nonzero}
+   ]]>
+  </style>
+ </defs>
+ <g id="Layer_x0020_1">
+  <circle class="fil0" cx="43.53" cy="43.53" r="43.53"/>
+  <path class="fil1" d="M45.47 28.69l-14.58 0 0 -6.99 29.67 0 -12.84 15.28c2.04,0.32 3.83,0.87 5.37,1.68 1.98,1.01 3.66,2.49 5.05,4.4 1.83,2.62 2.6,5.73 2.27,9.33 -0.3,3.6 -1.59,6.51 -3.87,8.73 -1.77,1.74 -3.83,3.04 -6.15,3.9 -2.13,0.78 -4.54,1.17 -7.19,1.17 -1.01,0 -2.15,-0.07 -3.44,-0.21 -1.29,-0.14 -2.59,-0.38 -3.91,-0.69 -2.39,-0.64 -4.28,-1.48 -5.71,-2.52l-0.32 -0.24 0.03 -8.22 1.26 0.81c1.78,1.16 3.43,2.01 4.94,2.55 1.72,0.58 3.61,0.91 5.67,0.99 2.25,0.1 4.24,-0.21 6,-0.93 1.64,-0.72 2.87,-1.75 3.69,-3.09 0.44,-0.7 0.75,-1.57 0.9,-2.61 0.12,-1.01 0.07,-1.97 -0.14,-2.85 -0.11,-0.4 -0.22,-0.71 -0.34,-0.96 -0.84,-2.02 -2.53,-3.41 -5.07,-4.17 -2.29,-0.67 -4.73,-0.68 -7.29,-0.03 -0.68,0.19 -1.23,0.37 -1.65,0.58l-1.1 0.48 -0.03 -5.92 8.78 -10.47z"/>
+ </g>
+</svg>

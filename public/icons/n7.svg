@@ -1,24 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Creator: CorelDRAW 2019 (64-Bit) -->
-<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="591px" height="591px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
-viewBox="0 0 150.24 150.24"
- xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Creator: CorelDRAW 2021.5 -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="590px" height="590px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 3346.36 3346.38"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
  <defs>
   <style type="text/css">
    <![CDATA[
-    .fil1 {fill:#FFED00}
-    .fil0 {fill:#000066}
-    .fil2 {fill:#FFED00;fill-rule:nonzero}
+    .fil0 {fill:#102070}
+    .fil2 {fill:#FFE000}
+    .fil1 {fill:#FFE000;fill-rule:nonzero}
    ]]>
   </style>
  </defs>
  <g id="Layer_x0020_1">
   <metadata id="CorelCorpID_0Corel-Layer"/>
-  <g id="_2527394364400">
-   <circle class="fil0" cx="75.12" cy="75.12" r="75.12"/>
-   <polygon class="fil1" points="119.78,39.19 131.03,39.19 131.03,112.23 119.78,112.23 119.78,81.34 91.46,81.34 91.46,112.23 80.21,112.23 80.21,39.19 91.46,39.19 91.46,70.09 119.78,70.09 "/>
-   <polygon class="fil2" points="22.24,49.4 22.24,39.1 73.42,39.1 40.92,112.69 28.5,112.69 56.45,49.4 "/>
-  </g>
+  <ellipse class="fil0" cx="1673.18" cy="1673.18" rx="1673.18" ry="1673.19"/>
+  <path class="fil1" d="M1414.6 1097.53l-741.38 0 0 -281.37 1199.03 0c-124.35,279.8 -248.7,559.97 -372.27,840.15 -123.95,280.17 -247.51,559.56 -371.46,838.57l-331.73 -1.19 617.81 -1396.16z"/>
+  <polygon class="fil2" points="1939.91,2494.86 2161.93,2494.86 2161.93,2020.26 2619.96,2020.26 2619.96,2494.86 2841.98,2494.86 2841.98,1323.63 2619.96,1323.63 2619.96,1798.24 2161.93,1798.24 2161.93,1323.63 1939.91,1323.63 "/>
  </g>
 </svg>

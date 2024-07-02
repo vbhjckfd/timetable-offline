@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Creator: CorelDRAW 2019 (64-Bit) -->
-<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="591px" height="591px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
-viewBox="0 0 647.04 647.04"
- xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Creator: CorelDRAW 2021.5 -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="590px" height="590px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 128.93 128.93"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
  <defs>
   <style type="text/css">
    <![CDATA[
     .fil0 {fill:#0E4F95}
-    .fil1 {fill:#FEFEFE;fill-rule:nonzero}
+    .fil1 {fill:white;fill-rule:nonzero}
    ]]>
   </style>
  </defs>
  <g id="Layer_x0020_1">
   <metadata id="CorelCorpID_0Corel-Layer"/>
-  <path class="fil0" d="M323.52 0c178.68,0 323.52,144.84 323.52,323.52 0,178.68 -144.84,323.52 -323.52,323.52 -178.68,0 -323.52,-144.84 -323.52,-323.52 0,-178.68 144.84,-323.52 323.52,-323.52z"/>
-  <path class="fil1" d="M94.68 397.54l0 -43.83 150.66 -195.85 50.21 0 0 195.85 33.03 0 0 43.83 -33.03 0 0 84.91 -50.21 0 0 -84.91 -150.66 0zm49.92 -43.83l100.74 0 0 -127.22 -100.74 127.22z"/>
-  <path class="fil1" d="M363.77 482.45l76.98 -226.01 32.27 0 77.03 226.01 -32.32 0 -20.19 -59.13 -81.32 0 -20.18 59.13 -32.27 0zm123.55 -89.64l-30.41 -88.8 -30.41 88.8 60.82 0z"/>
+  <circle class="fil0" cx="64.46" cy="64.46" r="64.46"/>
+  <path class="fil1" d="M49.74 96.26l0 -16.39 -29.09 0 0 -9.83 29.62 -38.46 11.19 0 0 37.76 6.4 0 0 10.53 -6.4 0 0 16.39 -11.72 0zm0 -26.92l0 -20.52 -16.25 20.52 16.25 0z"/>
+  <path class="fil1" d="M78.71 96.12l3.29 -9.78 15.76 0.01 3.26 9.77 8.03 0 -15.17 -45.03 -7.89 0 -15.18 45.03 7.9 0zm11.2 -33.26l5.17 15.46 -10.38 0 5.21 -15.46z"/>
  </g>
 </svg>

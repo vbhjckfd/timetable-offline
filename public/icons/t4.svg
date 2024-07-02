@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!-- Creator: CorelDRAW 2019 (64-Bit) -->
-<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="589px" height="589px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
-viewBox="0 0 258.26 258.26"
- xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Creator: CorelDRAW 2021.5 -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="590px" height="590px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 87.07 87.07"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
  <defs>
   <style type="text/css">
    <![CDATA[
-    .fil1 {fill:#2B2A29}
-    .fil0 {fill:#1CBBEE}
+    .fil0 {fill:#009FCD}
+    .fil1 {fill:#FEFEFE;fill-rule:nonzero}
    ]]>
   </style>
  </defs>
  <g id="Layer_x0020_1">
   <metadata id="CorelCorpID_0Corel-Layer"/>
-  <g id="_2527397757008">
-   <rect class="fil0" transform="matrix(5.86819 -5.86818 5.86819 5.86818 -14.2747 129.128)" width="24.44" height="24.44" rx="4.14" ry="4.14"/>
-   <path class="fil1" d="M134.96 92l0.01 50.53 -39.94 -0.04 39.93 -50.49zm-59.77 50.49l0 17.35 59.78 0 0 33.69 19.87 0 0 -33.69 13.12 0 0 -17.31 -13.12 0 0 -77.79 -19.83 -0.02 -59.82 77.77z"/>
-  </g>
+  <rect class="fil0" transform="matrix(2.34728 -2.34727 2.34728 2.34727 -4.81262 43.5333)" width="20.6" height="20.6" rx="3.49" ry="3.49"/>
+  <path class="fil1" d="M45.03 66.27l0 -11.08 -19.68 0 0 -6.65 20.04 -26.02 7.57 0 0 25.55 4.33 0 0 7.12 -4.33 0 0 11.08 -7.93 0zm0 -18.2l0 -13.89 -10.99 13.89 10.99 0z"/>
  </g>
 </svg>
