@@ -5,8 +5,7 @@ ruby '~> 3.1'
 
 gem 'activesupport', '~> 7.0.2', '>= 7.0.2.3'
 
-gem 'eventmachine'
-gem 'thin'
+gem 'puma'
 gem 'sinatra'
 
 gem 'rqrcode', '~> 2.1'

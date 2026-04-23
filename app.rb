@@ -56,6 +56,14 @@ def get_transfers(data)
 end
 
 class App < Sinatra::Base
+  configure do
+    set :server, :puma
+    set :bind, '0.0.0.0'
+  end
+
+  before do
+    headers 'X-Robots-Tag' => 'noindex, nofollow'
+  end
 
   get '/:code/schema' do
     stop_code = params['code']
