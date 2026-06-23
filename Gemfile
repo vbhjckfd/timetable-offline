@@ -3,17 +3,19 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '~> 3.1'
 
-gem 'activesupport', '~> 7.0.2', '>= 7.0.2.3'
+gem 'activesupport', '~> 7.2', '>= 7.2.3.1'
 
-gem 'puma'
+gem 'puma', '>= 8.0.2'
 gem 'sinatra'
+
+gem 'rack', '>= 2.2.23'
 
 gem 'rqrcode', '~> 2.1'
 
 gem 'parallel'
 gem 'ruby-progressbar'
 
-gem 'faraday'
+gem 'faraday', '>= 1.10.5', '< 2'
 
 group :test do
   gem 'rspec'
