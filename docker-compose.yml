@@ -4,6 +4,6 @@ services:
     ports:
       - "4567:4567"
     volumes:
-      - .:/app
+      - .:/application
     environment:
       - APP_ENV=development

@@ -187,4 +187,4 @@ class App < Sinatra::Base
 
 end
 
-App.run!
+App.run! if __FILE__ == $0

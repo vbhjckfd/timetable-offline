@@ -14,3 +14,9 @@ gem 'parallel'
 gem 'ruby-progressbar'
 
 gem 'faraday'
+
+group :test do
+  gem 'rspec'
+  gem 'rack-test'
+  gem 'webmock'
+end
