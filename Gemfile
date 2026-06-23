@@ -6,7 +6,7 @@ ruby '~> 3.1'
 gem 'activesupport', '~> 7.2', '>= 7.2.3.1'
 
 gem 'puma', '>= 8.0.2'
-gem 'sinatra'
+gem 'sinatra', '~> 2.2', '>= 2.2.3'
 
 gem 'rack', '>= 2.2.23'
 
