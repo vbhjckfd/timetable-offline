@@ -154,6 +154,18 @@ RSpec.describe App do
         expect(last_response.status).to eq(400)
       end
 
+      it 'returns 503 when the API returns 500' do
+        stub_stop(body: 'upstream boom', status: 500)
+        get "/#{STOP_CODE}"
+        expect(last_response.status).to eq(503)
+      end
+
+      it 'returns 503 when the API connection times out' do
+        stub_request(:get, API_STOP_URL).to_timeout
+        get "/#{STOP_CODE}"
+        expect(last_response.status).to eq(503)
+      end
+
       it 'returns 404 when the API returns 404' do
         stub_request(:get, "#{API_BASE}/stops/9999/static").to_return(status: 404, body: '')
         get '/9999'
@@ -275,6 +287,31 @@ RSpec.describe App do
         get "/#{STOP_CODE}/schema"
         expect(last_response.status).to eq(503)
       end
+    end
+  end
+
+  # ── upstream request construction ───────────────────────────────────────────
+
+  describe 'upstream URL construction' do
+    it 'percent-encodes the stop code instead of interpolating it raw' do
+      escaped = stub_request(:get, "#{API_BASE}/stops/%D0%90/static")
+                  .to_return(status: 404, body: '')
+
+      get '/%D0%90' # Cyrillic А
+
+      expect(last_response.status).to eq(404)
+      expect(escaped).to have_been_requested
+    end
+
+    # Sinatra 4 mounts Rack::Protection::PathTraversal, which normalises the
+    # path before routing, so ../ never reaches params. url_encode is the second
+    # layer, in case that middleware is ever dropped.
+    it 'does not let an encoded ../ reach the upstream path' do
+      stub_request(:get, %r{#{API_BASE}/stops/.*/static}).to_return(status: 404, body: '')
+
+      get '/..%2F..%2Fadmin'
+
+      expect(WebMock).not_to have_requested(:get, %r{/stops/\.\.})
     end
   end
 

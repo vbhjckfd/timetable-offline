@@ -2,6 +2,7 @@ require 'sinatra/base'
 require 'faraday'
 require 'rqrcode'
 require 'base64'
+require 'erb'
 require "active_support/all"
 
 require_relative './eng_names.rb'
@@ -47,7 +48,7 @@ def get_transfers(data)
     night: [],
   }
 
-  data['transfers'].each do |t|
+  Array(data['transfers']).each do |t|
     if t['route'].start_with? 'Н'
       type = :night
     else
@@ -73,6 +74,11 @@ def get_transfers(data)
 end
 
 class App < Sinatra::Base
+  # Cloud Run gives the whole request 15s, and rendering the schema SVG is not
+  # free, so the upstream call has to give up well before that.
+  API_OPEN_TIMEOUT = 3
+  API_READ_TIMEOUT = 8
+
   configure do
     set :server, :puma
     set :bind, '0.0.0.0'
@@ -82,22 +88,39 @@ class App < Sinatra::Base
     headers 'X-Robots-Tag' => 'noindex, nofollow'
   end
 
+  helpers do
+    def load_stop(stop_code)
+      api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
+      # url_encode, not raw interpolation: Sinatra decodes %2F after matching
+      # :code, so an unescaped code can climb out of the /stops/ path.
+      url = "#{api_url}/stops/#{ERB::Util.url_encode(stop_code)}/static"
+
+      begin
+        response = Faraday.get(url) do |req|
+          req.options.open_timeout = API_OPEN_TIMEOUT
+          req.options.timeout = API_READ_TIMEOUT
+        end
+      rescue Faraday::Error => e
+        warn "upstream request failed for stop #{stop_code}: #{e.class}: #{e.message}"
+        halt 503, 'Сервіс тимчасово недоступний'
+      end
+
+      halt 400, 'Код зупинки має бути числом, на кшталт 128' if response.status == 400
+      halt 404, 'Неправильний код зупинки' if response.status == 404
+      halt 503, 'Сервіс тимчасово недоступний' unless response.success?
+
+      begin
+        JSON.parse(response.body)
+      rescue JSON::ParserError
+        halt 503
+      end
+    end
+  end
+
   get '/:code/schema' do
     stop_code = params['code']
-    api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
 
-    response = Faraday.get "#{api_url}/stops/#{stop_code}/static"
-
-    halt response.status, "Код зупинки має бути числом, на кшталт 128" if response.status == 400
-    halt response.status, "Неправильний код зупинки" if response.status == 404
-
-    begin
-      data = JSON.parse(response.body)
-    rescue JSON::ParserError => e
-      data = nil
-    end
-    halt 503 if data.nil?
-
+    data = load_stop(stop_code)
     transfers = get_transfers(data)
 
     data['name_en'] = eng_name_for(stop_code, data['eng_name'])
@@ -139,20 +162,8 @@ class App < Sinatra::Base
 
   get '/:code' do
     stop_code = params['code']
-    api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
 
-    response = Faraday.get "#{api_url}/stops/#{stop_code}/static"
-
-    halt response.status, "Код зупинки має бути числом, на кшталт 128" if response.status == 400
-    halt response.status, "Неправильний код зупинки" if response.status == 404
-
-    begin
-      data = JSON.parse(response.body)
-    rescue JSON::ParserError => e
-      data = nil
-    end
-    halt 503 if data.nil?
-
+    data = load_stop(stop_code)
     transfers = get_transfers(data)
 
     n = detect_layout(transfers)
@@ -188,8 +199,8 @@ class App < Sinatra::Base
       'Муроване, ',
       'Рудно, ',
       'Рудне, ',
-    ].each {|s| data['name'] = data['name'].sub(s, '') }
-    data['name'] = data['name'].upcase_first
+    ].each {|s| data['name'] = data['name'].to_s.sub(s, '') }
+    data['name'] = data['name'].to_s.upcase_first
 
     erb "layout-#{n}".to_sym,
     :locals => {
