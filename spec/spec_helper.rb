@@ -1,3 +1,8 @@
+# Must be set before Sinatra is loaded. Sinatra 4's Rack::Protection::HostAuthorization
+# only permits localhost-ish hosts in the development environment, which would 403 every
+# rack-test request (they come from "example.org").
+ENV['APP_ENV'] ||= 'test'
+
 require 'rack/test'
 require 'webmock/rspec'
 require_relative '../app'
