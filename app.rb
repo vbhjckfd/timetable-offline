@@ -20,6 +20,13 @@ def detect_layout(transfers)
   n
 end
 
+VEHICLE_TYPES = {
+  'bus' => :bus,
+  'tram' => :tram,
+  'trol' => :trol,
+  'trolleybus' => :trol,
+}.freeze
+
 def get_transfers(data)
   transfers = {
     bus: [],
@@ -32,7 +39,7 @@ def get_transfers(data)
     if t['route'].start_with? 'Н'
       type = :night
     else
-      type = t['vehicle_type'].to_sym
+      type = VEHICLE_TYPES.fetch(t['vehicle_type'], :bus)
     end
 
     name = t['route'].downcase

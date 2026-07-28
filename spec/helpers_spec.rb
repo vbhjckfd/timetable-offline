@@ -64,6 +64,18 @@ RSpec.describe '#get_transfers' do
       expect(result).to have_key(:trol)
     end
 
+    it 'puts routes with the API "trolleybus" type under :trol' do
+      result = call([make_transfer(route: 'Т25', vehicle_type: 'trolleybus')])
+      expect(result).to have_key(:trol)
+      expect(result[:trol].first['route']).to eq('Т25')
+    end
+
+    it 'falls back to :bus for an unknown vehicle_type instead of raising' do
+      result = call([make_transfer(route: '99', vehicle_type: 'hovercraft')])
+      expect(result).to have_key(:bus)
+      expect(result[:bus].first['route']).to eq('99')
+    end
+
     it 'puts routes starting with Н under :night regardless of vehicle_type' do
       result = call([make_transfer(route: 'Н1', vehicle_type: 'bus')])
       expect(result).to have_key(:night)

@@ -85,6 +85,24 @@ RSpec.describe App do
       end
     end
 
+    context 'API "trolleybus" vehicle_type (real payload for stops 80/81)' do
+      before do
+        stub_stop(body: valid_body(transfers: [
+          { 'route' => 'А03', 'vehicle_type' => 'bus',        'end_stop_code' => 320 },
+          { 'route' => 'А18', 'vehicle_type' => 'bus',        'end_stop_code' => 177 },
+          { 'route' => 'А57', 'vehicle_type' => 'bus',        'end_stop_code' => 417 },
+          { 'route' => 'Т25', 'vehicle_type' => 'trolleybus', 'end_stop_code' => 62 },
+        ]))
+      end
+
+      it 'returns 200 and renders without error' do
+        get "/#{STOP_CODE}"
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('<svg')
+        expect(last_response.body).to include('/icons/t25.svg')
+      end
+    end
+
     context 'layout-28: many routes across multiple types' do
       before do
         bus_routes = (10..23).map { |n| { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => 1 } }
