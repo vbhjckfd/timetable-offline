@@ -6,6 +6,18 @@ require "active_support/all"
 
 require_relative './eng_names.rb'
 
+ENG_NAMES_BY_CODE = ENG_NAMES.each_with_object({}) { |entry, h| h[entry[:code]] = entry[:eng_name] }.freeze
+
+# The API is the source of truth for English names: it covers more stops than
+# eng_names.rb and is kept current (e.g. stop 27 is "Lem Square" upstream, still
+# "Sakharova" in the table). The table is only a fallback for stops the API has
+# no translation for, and stops in neither get an empty string rather than a 500.
+def eng_name_for(code, api_name)
+  return api_name if api_name.present?
+
+  ENG_NAMES_BY_CODE[code.to_i] || ''
+end
+
 def detect_layout(transfers)
   routeTypesCount = transfers.keys.length
   routesCount = transfers.values.flatten.length
@@ -52,9 +64,7 @@ def get_transfers(data)
     name = name + "a" if ["1", "2", "3", "4", "5", "6", "36", "47"].include? name
     t['route_normalized'] = name
 
-    eng_data = ENG_NAMES.find{|i| i[:code] == t['end_stop_code'].to_i}
-
-    t['eng_end_stop_name'] = eng_data ? eng_data[:eng_name] : ""
+    t['eng_end_stop_name'] = eng_name_for(t['end_stop_code'], t['end_stop_eng_name'])
 
     transfers[type] << t
   end
@@ -90,9 +100,7 @@ class App < Sinatra::Base
 
     transfers = get_transfers(data)
 
-    eng_data = ENG_NAMES.find{|i| i[:code] == stop_code.to_i}
-
-    data['name_en'] = eng_data[:eng_name] || ""
+    data['name_en'] = eng_name_for(stop_code, data['eng_name'])
 
     erb "scheme".to_sym,
     :locals => {

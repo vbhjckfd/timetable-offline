@@ -14,11 +14,13 @@ RSpec.describe App do
       .to_return(status: status, body: body, headers: { 'Content-Type' => 'application/json' })
   end
 
-  def valid_body(transfers: nil)
+  def valid_body(transfers: nil, **extra)
     transfers ||= [
       { 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => 1 }
     ]
-    { 'name' => 'Дитяча залізниця', 'code' => 1, 'transfers' => transfers }.to_json
+    { 'name' => 'Дитяча залізниця', 'code' => 1, 'transfers' => transfers }
+      .merge(extra.transform_keys(&:to_s))
+      .to_json
   end
 
   # ── GET /:code ──────────────────────────────────────────────────────────────
@@ -119,6 +121,32 @@ RSpec.describe App do
       end
     end
 
+    context 'layout-28: 22 bus routes (needs a 4th grid row)' do
+      before do
+        stub_stop(body: valid_body(transfers: (1..22).map do |n|
+          { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => 1 }
+        end))
+      end
+
+      it 'returns 200 and renders without error' do
+        get "/#{STOP_CODE}"
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('<svg')
+      end
+
+      it 'renders all 22 route icons' do
+        get "/#{STOP_CODE}"
+        # Routes 1-6 normalise to 1a-6a, the rest keep their bare number.
+        expect(last_response.body.scan(%r{/icons/\d+[a-z]?\.svg}).length).to eq(22)
+      end
+
+      it 'places the 22nd route on a 4th row clear of the QR block at y 3172' do
+        get "/#{STOP_CODE}"
+        # 4th row top = 3378.22 - 295.28, rendered as a float.
+        expect(last_response.body).to match(/y="3082\.9\d*"/)
+      end
+    end
+
     context 'error handling' do
       it 'returns 400 when the API returns 400' do
         stub_request(:get, "#{API_BASE}/stops/abc/static").to_return(status: 400, body: '')
@@ -185,6 +213,50 @@ RSpec.describe App do
       end
     end
 
+    context 'English stop name resolution' do
+      # 182 of the API's 993 stops are absent from eng_names.rb; this used to
+      # raise NoMethodError on nil and 500.
+      it 'renders a stop that is in neither the API nor eng_names.rb' do
+        stub_request(:get, "#{API_BASE}/stops/999999/static")
+          .to_return(status: 200, body: valid_body, headers: { 'Content-Type' => 'application/json' })
+
+        get '/999999/schema'
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('<svg')
+      end
+
+      it 'uses the API eng_name for a stop missing from eng_names.rb' do
+        stub_request(:get, "#{API_BASE}/stops/999999/static")
+          .to_return(status: 200, body: valid_body(eng_name: 'Brand New Stop'),
+                     headers: { 'Content-Type' => 'application/json' })
+
+        get '/999999/schema'
+        expect(last_response.body).to include('Brand New Stop')
+      end
+
+      # eng_names.rb has stop 1 as "Children's railway"; the API wins.
+      it 'prefers the API eng_name over the stale eng_names.rb entry' do
+        stub_stop(body: valid_body(
+          eng_name: 'Lem Square',
+          transfers: [{ 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => 999999 }]
+        ))
+
+        get "/#{STOP_CODE}/schema"
+        expect(last_response.body).to include('Lem Square')
+        expect(last_response.body).not_to include("Children's railway")
+      end
+
+      it 'prefers the API end_stop_eng_name over the stale eng_names.rb entry' do
+        stub_stop(body: valid_body(transfers: [
+          { 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => 1,
+            'end_stop_eng_name' => 'Renamed Terminus' }
+        ]))
+
+        get "/#{STOP_CODE}/schema"
+        expect(last_response.body).to include('Renamed Terminus')
+      end
+    end
+
     context 'error handling' do
       it 'returns 400 when the API returns 400' do
         stub_request(:get, "#{API_BASE}/stops/abc/static").to_return(status: 400, body: '')
@@ -203,6 +275,21 @@ RSpec.describe App do
         get "/#{STOP_CODE}/schema"
         expect(last_response.status).to eq(503)
       end
+    end
+  end
+
+  # ── SVG well-formedness ─────────────────────────────────────────────────────
+
+  describe 'SVG output' do
+    before do
+      stub_stop(body: valid_body(transfers: (1..12).map do |n|
+        { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => 1 }
+      end))
+    end
+
+    it 'emits no empty transform values' do
+      get "/#{STOP_CODE}"
+      expect(last_response.body).not_to include('translate(0, )')
     end
   end
 
