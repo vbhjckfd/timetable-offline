@@ -1,7 +1,7 @@
 FROM ruby:3.1-alpine
 
 # Change to the application's directory
-ENV APP_HOME /application
+ENV APP_HOME=/application
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
