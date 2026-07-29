@@ -5,8 +5,11 @@ RSpec.describe App do
     App
   end
 
-  # Stop code 1 is present in ENG_NAMES ("Children's railway"), avoiding nil crash
-  STOP_CODE = '1'
+  # Stop 80 is a real production stop and is present in ENG_NAMES
+  # ("Stryiskyi market"), so the eng-name fallback has something to find.
+  STOP_CODE = '80'
+  # End stop 2 is likewise real, and in ENG_NAMES as "Staryi Rynok square".
+  END_STOP_CODE = 2
   API_STOP_URL = "#{API_BASE}/stops/#{STOP_CODE}/static"
 
   def stub_stop(body:, status: 200)
@@ -16,9 +19,9 @@ RSpec.describe App do
 
   def valid_body(transfers: nil, **extra)
     transfers ||= [
-      { 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => 1 }
+      { 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE }
     ]
-    { 'name' => 'Дитяча залізниця', 'code' => 1, 'transfers' => transfers }
+    { 'name' => 'Стрийський ринок', 'code' => STOP_CODE.to_i, 'transfers' => transfers }
       .merge(extra.transform_keys(&:to_s))
       .to_json
   end
@@ -52,14 +55,14 @@ RSpec.describe App do
 
       it 'includes the stop code in the SVG body' do
         get "/#{STOP_CODE}"
-        expect(last_response.body).to include(STOP_CODE)
+        expect(last_response.body).to include(">#{STOP_CODE}</tspan>")
       end
     end
 
     context 'layout-3: one type with ≤3 routes' do
       before do
         stub_stop(body: valid_body(transfers: [
-          { 'route' => '3', 'vehicle_type' => 'tram', 'end_stop_code' => 1 }
+          { 'route' => '3', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE }
         ]))
       end
 
@@ -73,7 +76,7 @@ RSpec.describe App do
     context 'layout-8: two types within capacity' do
       before do
         stub_stop(body: valid_body(transfers: [
-          { 'route' => '3',  'vehicle_type' => 'tram', 'end_stop_code' => 1 },
+          { 'route' => '3',  'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE },
           { 'route' => '5',  'vehicle_type' => 'tram', 'end_stop_code' => 2 },
           { 'route' => '32', 'vehicle_type' => 'bus',  'end_stop_code' => 3 },
           { 'route' => '14', 'vehicle_type' => 'bus',  'end_stop_code' => 4 },
@@ -107,7 +110,7 @@ RSpec.describe App do
 
     context 'layout-28: many routes across multiple types' do
       before do
-        bus_routes = (10..23).map { |n| { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => 1 } }
+        bus_routes = (10..23).map { |n| { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE } }
         stub_stop(body: valid_body(transfers: bus_routes + [
           { 'route' => '3',  'vehicle_type' => 'tram', 'end_stop_code' => 2 },
           { 'route' => '34', 'vehicle_type' => 'trol', 'end_stop_code' => 3 },
@@ -124,7 +127,7 @@ RSpec.describe App do
     context 'layout-28: 22 bus routes (needs a 4th grid row)' do
       before do
         stub_stop(body: valid_body(transfers: (1..22).map do |n|
-          { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => 1 }
+          { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }
         end))
       end
 
@@ -181,8 +184,8 @@ RSpec.describe App do
 
     context 'stop name cleaning' do
       it 'strips known suburb prefixes' do
-        body = { 'name' => 'Рудне, Центр', 'code' => 1, 'transfers' => [
-          { 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => 1 }
+        body = { 'name' => 'Рудне, Центр', 'code' => STOP_CODE.to_i, 'transfers' => [
+          { 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE }
         ] }.to_json
         stub_stop(body: body)
         get "/#{STOP_CODE}"
@@ -221,7 +224,7 @@ RSpec.describe App do
 
       it 'includes the English stop name' do
         get "/#{STOP_CODE}/schema"
-        expect(last_response.body).to include("Children's railway")
+        expect(last_response.body).to include('Stryiskyi market')
       end
     end
 
@@ -246,7 +249,7 @@ RSpec.describe App do
         expect(last_response.body).to include('Brand New Stop')
       end
 
-      # eng_names.rb has stop 1 as "Children's railway"; the API wins.
+      # eng_names.rb has stop 80 as "Stryiskyi market"; the API wins.
       it 'prefers the API eng_name over the stale eng_names.rb entry' do
         stub_stop(body: valid_body(
           eng_name: 'Lem Square',
@@ -255,12 +258,12 @@ RSpec.describe App do
 
         get "/#{STOP_CODE}/schema"
         expect(last_response.body).to include('Lem Square')
-        expect(last_response.body).not_to include("Children's railway")
+        expect(last_response.body).not_to include('Stryiskyi market')
       end
 
       it 'prefers the API end_stop_eng_name over the stale eng_names.rb entry' do
         stub_stop(body: valid_body(transfers: [
-          { 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => 1,
+          { 'route' => '14', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE,
             'end_stop_eng_name' => 'Renamed Terminus' }
         ]))
 
@@ -320,7 +323,7 @@ RSpec.describe App do
   describe 'SVG output' do
     before do
       stub_stop(body: valid_body(transfers: (1..12).map do |n|
-        { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => 1 }
+        { 'route' => n.to_s, 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }
       end))
     end
 

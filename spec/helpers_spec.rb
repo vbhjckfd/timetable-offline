@@ -143,8 +143,8 @@ RSpec.describe '#get_transfers' do
 
   describe 'English stop name lookup' do
     it 'sets eng_end_stop_name from ENG_NAMES when code is known' do
-      result = call([make_transfer(route: '3', vehicle_type: 'tram', end_stop_code: 1)])
-      expect(result[:tram].first['eng_end_stop_name']).to eq("Children's railway")
+      result = call([make_transfer(route: '3', vehicle_type: 'tram', end_stop_code: 2)])
+      expect(result[:tram].first['eng_end_stop_name']).to eq('Staryi Rynok square')
     end
 
     it 'sets eng_end_stop_name to empty string for unknown end_stop_code' do
