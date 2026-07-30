@@ -117,20 +117,27 @@ class App < Sinatra::Base
     end
   end
 
-  get '/:code/schema' do
-    stop_code = params['code']
+  # "schema" is the poster the old drawing left behind, with the new map and
+  # legend dropped into it; "schema-1" is the new drawing taken whole, with only
+  # the per-stop layer on top. Both read the same data.
+  ['/:code/schema', '/:code/schema-1'].each do |route|
+    template = route.end_with?('-1') ? :scheme_1 : :scheme
 
-    data = load_stop(stop_code)
-    transfers = get_transfers(data)
+    get route do
+      stop_code = params['code']
 
-    data['name_en'] = eng_name_for(stop_code, data['eng_name'])
+      data = load_stop(stop_code)
+      transfers = get_transfers(data)
 
-    erb "scheme".to_sym,
-    :locals => {
-      data: data,
-      transfers: transfers
-    },
-    content_type: 'image/svg+xml'
+      data['name_en'] = eng_name_for(stop_code, data['eng_name'])
+
+      erb template,
+      :locals => {
+        data: data,
+        transfers: transfers
+      },
+      content_type: 'image/svg+xml'
+    end
   end
 
   # get '/:code.pdf' do
