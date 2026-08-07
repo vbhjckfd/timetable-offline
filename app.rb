@@ -40,6 +40,20 @@ VEHICLE_TYPES = {
   'trolleybus' => :trol,
 }.freeze
 
+# Cyrillic route names map onto Latin icon filenames: А03 → a03 → a3 → 3 → 3a,
+# Т25 → t25, Аеропорт → airport.
+def normalize_route_name(route)
+  name = route.to_s.downcase
+  name = name.gsub(/[тан]/, 'т' => 't', 'а' => 'a', 'н' => 'n')
+  name = name.gsub('a0', 'a')
+  name = name.gsub('t0', 't')
+  name = name.gsub('n0', 'n')
+  name = name[1..-1] if name.chr == "a"
+  name = 'airport' if name == "еропорt"
+  name = name + "a" if ["1", "2", "3", "4", "5", "6", "36", "47"].include? name
+  name
+end
+
 def get_transfers(data)
   transfers = {
     bus: [],
@@ -49,20 +63,16 @@ def get_transfers(data)
   }
 
   Array(data['transfers']).each do |t|
-    if t['route'].start_with? 'Н'
+    name = normalize_route_name(t['route'])
+
+    # Night routes are Н-prefixed whatever vehicle the API says runs them, and
+    # the normalised name is where that prefix has become a Latin n.
+    if name.start_with? 'n'
       type = :night
     else
       type = VEHICLE_TYPES.fetch(t['vehicle_type'], :bus)
     end
 
-    name = t['route'].downcase
-    name = name.gsub(/[тан]/, 'т' => 't', 'а' => 'a', 'н' => 'n')
-    name = name.gsub('a0', 'a')
-    name = name.gsub('t0', 't')
-    name = name.gsub('n0', 'n')
-    name = name[1..-1] if name.chr == "a"
-    name = 'airport' if name == "еропорt"
-    name = name + "a" if ["1", "2", "3", "4", "5", "6", "36", "47"].include? name
     t['route_normalized'] = name
 
     t['eng_end_stop_name'] = eng_name_for(t['end_stop_code'], t['end_stop_eng_name'])
@@ -71,6 +81,54 @@ def get_transfers(data)
   end
 
   transfers = transfers.delete_if { |k, v| v.empty? }
+end
+
+# The normalised name is also the icon filename, interpolated straight into an
+# xlink:href, so anything that is not a plain badge name never gets that far.
+ROUTE_TOKEN = /\A[a-z0-9]{1,8}\z/
+
+# The API has no vehicle type for a route it does not know serves the stop, so
+# it is read off the prefix: Т/T trolleybus, А/A bus, Н/N night, bare digits tram.
+def infer_vehicle_type(route)
+  case route.to_s.downcase.gsub(/[тан]/, 'т' => 't', 'а' => 'a', 'н' => 'n').chr
+  when 't' then 'trol'
+  when 'a', 'n' then 'bus'
+  else 'tram'
+  end
+end
+
+# ?add=A46,T02&remove=T03,A47 — hand-editing of the route list, for stops whose
+# upstream data is behind reality. Both sides match on the normalised name, so
+# "A47", Cyrillic "А47" and "47" all mean the same route. Added routes carry no
+# destination: the API only names end stops for routes it says serve the stop.
+def apply_route_overrides(data, add: nil, remove: nil)
+  transfers = Array(data['transfers'])
+
+  removed = add_remove_tokens(remove).map { |token| normalize_route_name(token) }
+  transfers = transfers.reject { |t| removed.include?(normalize_route_name(t['route'])) }
+
+  present = transfers.map { |t| normalize_route_name(t['route']) }
+
+  add_remove_tokens(add).each do |token|
+    name = normalize_route_name(token)
+    next unless name.match?(ROUTE_TOKEN)
+    next if present.include?(name)
+
+    present << name
+    transfers << {
+      'route' => token,
+      'vehicle_type' => infer_vehicle_type(token),
+      'end_stop_code' => nil,
+      'end_stop_name' => '',
+      'end_stop_eng_name' => '',
+    }
+  end
+
+  data.merge('transfers' => transfers)
+end
+
+def add_remove_tokens(value)
+  value.to_s.split(',').map(&:strip).reject(&:empty?)
 end
 
 class App < Sinatra::Base
@@ -127,6 +185,7 @@ class App < Sinatra::Base
       stop_code = params['code']
 
       data = load_stop(stop_code)
+      data = apply_route_overrides(data, add: params['add'], remove: params['remove'])
       transfers = get_transfers(data)
 
       data['name_en'] = eng_name_for(stop_code, data['eng_name'])
@@ -171,6 +230,7 @@ class App < Sinatra::Base
     stop_code = params['code']
 
     data = load_stop(stop_code)
+    data = apply_route_overrides(data, add: params['add'], remove: params['remove'])
     transfers = get_transfers(data)
 
     n = detect_layout(transfers)

@@ -153,3 +153,112 @@ RSpec.describe '#get_transfers' do
     end
   end
 end
+
+RSpec.describe '#apply_route_overrides' do
+  def data(*routes)
+    { 'transfers' => routes.map { |r| { 'route' => r, 'vehicle_type' => 'bus', 'end_stop_code' => 2 } } }
+  end
+
+  def routes(result)
+    result['transfers'].map { |t| t['route'] }
+  end
+
+  describe 'remove' do
+    it 'drops a route matched by its Latin query name' do
+      result = apply_route_overrides(data('А47', 'А46'), remove: 'A47')
+      expect(routes(result)).to eq(['А46'])
+    end
+
+    it 'drops several comma-separated routes' do
+      result = apply_route_overrides(data('А47', 'А46', 'Т03'), remove: 'A47,T03')
+      expect(routes(result)).to eq(['А46'])
+    end
+
+    it 'ignores surrounding whitespace' do
+      result = apply_route_overrides(data('А47', 'А46'), remove: ' A47 , A46 ')
+      expect(routes(result)).to be_empty
+    end
+
+    it 'ignores a route that does not serve the stop' do
+      result = apply_route_overrides(data('А46'), remove: 'A99')
+      expect(routes(result)).to eq(['А46'])
+    end
+
+    it 'leaves the list untouched when the param is absent' do
+      result = apply_route_overrides(data('А46'))
+      expect(routes(result)).to eq(['А46'])
+    end
+  end
+
+  describe 'add' do
+    it 'appends a route the API does not list' do
+      result = apply_route_overrides(data('А46'), add: 'A47')
+      expect(routes(result)).to eq(['А46', 'A47'])
+    end
+
+    it 'appends several comma-separated routes' do
+      result = apply_route_overrides(data('А46'), add: 'A47,T02')
+      expect(routes(result)).to eq(['А46', 'A47', 'T02'])
+    end
+
+    it 'does not duplicate a route the stop already has' do
+      result = apply_route_overrides(data('А46'), add: 'A46')
+      expect(routes(result)).to eq(['А46'])
+    end
+
+    it 'does not duplicate a route added twice in one param' do
+      result = apply_route_overrides(data, add: 'A47,А47')
+      expect(routes(result)).to eq(['A47'])
+    end
+
+    it 'infers trolleybus from a T prefix' do
+      result = apply_route_overrides(data, add: 'T02')
+      expect(result['transfers'].first['vehicle_type']).to eq('trol')
+    end
+
+    it 'infers bus from an A prefix' do
+      result = apply_route_overrides(data, add: 'A47')
+      expect(result['transfers'].first['vehicle_type']).to eq('bus')
+    end
+
+    it 'infers tram from a bare number' do
+      result = apply_route_overrides(data, add: '8')
+      expect(result['transfers'].first['vehicle_type']).to eq('tram')
+    end
+
+    it 'buckets an N-prefixed route as night' do
+      result = apply_route_overrides(data, add: 'N1')
+      expect(get_transfers(result)).to have_key(:night)
+    end
+
+    it 'gives the added route a blank destination' do
+      transfer = apply_route_overrides(data, add: 'A47')['transfers'].first
+      expect(transfer['end_stop_name']).to eq('')
+      expect(get_transfers('transfers' => [transfer])[:bus].first['eng_end_stop_name']).to eq('')
+    end
+
+    # route_normalized lands in an xlink:href, so a name that is not a plain
+    # badge must never reach the template.
+    it 'rejects a token that would escape the icon path' do
+      result = apply_route_overrides(data, add: '../../etc/passwd')
+      expect(routes(result)).to be_empty
+    end
+
+    it 'rejects a token with punctuation' do
+      result = apply_route_overrides(data, add: '47"/><script>')
+      expect(routes(result)).to be_empty
+    end
+  end
+
+  describe 'add and remove together' do
+    it 'removes first, so a route can be swapped for itself' do
+      result = apply_route_overrides(data('А47'), add: 'A47', remove: 'A47')
+      expect(routes(result)).to eq(['A47'])
+    end
+
+    it 'applies both lists' do
+      result = apply_route_overrides(data('А46', 'Т03'), add: 'T02', remove: 'T03')
+      expect(routes(result)).to eq(['А46', 'T02'])
+    end
+  end
+end

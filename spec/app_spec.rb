@@ -195,6 +195,54 @@ RSpec.describe App do
     end
   end
 
+  # ── ?add / ?remove ──────────────────────────────────────────────────────────
+
+  describe 'route overrides' do
+    before do
+      stub_stop(body: valid_body(transfers: [
+        { 'route' => 'А46', 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE },
+        { 'route' => 'Т03', 'vehicle_type' => 'trolleybus', 'end_stop_code' => END_STOP_CODE },
+      ]))
+    end
+
+    it 'drops a removed route from the sticker' do
+      get "/#{STOP_CODE}?remove=T03"
+      expect(last_response.body).to include('/icons/46.svg')
+      expect(last_response.body).not_to include('/icons/t3.svg')
+    end
+
+    it 'draws an added route on the sticker' do
+      get "/#{STOP_CODE}?add=T02"
+      expect(last_response.body).to include('/icons/t2.svg')
+    end
+
+    it 'applies both params at once' do
+      get "/#{STOP_CODE}?add=A47,T02&remove=T03,A46"
+      expect(last_response.body).to include('/icons/47a.svg')
+      expect(last_response.body).to include('/icons/t2.svg')
+      expect(last_response.body).not_to include('/icons/46.svg')
+      expect(last_response.body).not_to include('/icons/t3.svg')
+    end
+
+    it 'applies the overrides to the schema too' do
+      get "/#{STOP_CODE}/schema?add=T02&remove=T03"
+      expect(last_response.body).to include('/icons/t2.svg')
+      expect(last_response.body).not_to include('/icons/t3.svg')
+    end
+
+    it 'renders a stop stripped down to a single route' do
+      get "/#{STOP_CODE}?remove=A46"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to include('<svg')
+    end
+
+    it 'ignores a route name that is not a plain badge' do
+      get "/#{STOP_CODE}?add=%2E%2E%2F%2E%2E%2Fsecret"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).not_to include('secret')
+    end
+  end
+
   # ── GET /:code/schema ───────────────────────────────────────────────────────
 
   describe 'GET /:code/schema' do
