@@ -250,15 +250,58 @@ RSpec.describe '#apply_route_overrides' do
     end
   end
 
-  describe 'add and remove together' do
+  describe 'only' do
+    it 'keeps just the listed routes' do
+      result = apply_route_overrides(data('А47', 'А46', 'Т03'), only: 'A46,T03')
+      expect(routes(result)).to eq(['А46', 'Т03'])
+    end
+
+    it 'keeps the upstream order, not the param order' do
+      result = apply_route_overrides(data('А47', 'А46'), only: 'A46,A47')
+      expect(routes(result)).to eq(['А47', 'А46'])
+    end
+
+    it 'ignores a listed route that does not serve the stop' do
+      result = apply_route_overrides(data('А46'), only: 'A46,A99')
+      expect(routes(result)).to eq(['А46'])
+    end
+
+    it 'empties the list when nothing matches' do
+      result = apply_route_overrides(data('А46'), only: 'A99')
+      expect(routes(result)).to be_empty
+    end
+
+    it 'leaves the list untouched when the param is absent' do
+      result = apply_route_overrides(data('А46', 'А47'))
+      expect(routes(result)).to eq(['А46', 'А47'])
+    end
+
+    it 'leaves the list untouched when the param is blank' do
+      result = apply_route_overrides(data('А46', 'А47'), only: ' , ')
+      expect(routes(result)).to eq(['А46', 'А47'])
+    end
+  end
+
+  describe 'params together' do
     it 'removes first, so a route can be swapped for itself' do
       result = apply_route_overrides(data('А47'), add: 'A47', remove: 'A47')
       expect(routes(result)).to eq(['A47'])
     end
 
-    it 'applies both lists' do
+    it 'applies add and remove' do
       result = apply_route_overrides(data('А46', 'Т03'), add: 'T02', remove: 'T03')
       expect(routes(result)).to eq(['А46', 'T02'])
+    end
+
+    # only narrows the upstream list; add still appends on top of it.
+    it 'appends an added route the only list does not name' do
+      result = apply_route_overrides(data('А46', 'А47'), only: 'A46', add: 'T02')
+      expect(routes(result)).to eq(['А46', 'T02'])
+    end
+
+    it 'lets remove cut into the only list' do
+      result = apply_route_overrides(data('А46', 'А47', 'Т03'), only: 'A46,A47', remove: 'A47')
+      expect(routes(result)).to eq(['А46'])
     end
   end
 end

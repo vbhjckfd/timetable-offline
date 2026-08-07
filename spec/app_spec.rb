@@ -241,6 +241,19 @@ RSpec.describe App do
       expect(last_response.status).to eq(200)
       expect(last_response.body).not_to include('secret')
     end
+
+    it 'keeps only the listed routes' do
+      get "/#{STOP_CODE}?only=T03"
+      expect(last_response.body).to include('/icons/t3.svg')
+      expect(last_response.body).not_to include('/icons/46.svg')
+    end
+
+    it 'applies only alongside add on the schema' do
+      get "/#{STOP_CODE}/schema?only=A46&add=T02"
+      expect(last_response.body).to include('/icons/46.svg')
+      expect(last_response.body).to include('/icons/t2.svg')
+      expect(last_response.body).not_to include('/icons/t3.svg')
+    end
   end
 
   # ── GET /:code/schema ───────────────────────────────────────────────────────

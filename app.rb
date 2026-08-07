@@ -97,19 +97,24 @@ def infer_vehicle_type(route)
   end
 end
 
-# ?add=A46,T02&remove=T03,A47 — hand-editing of the route list, for stops whose
-# upstream data is behind reality. Both sides match on the normalised name, so
-# "A47", Cyrillic "А47" and "47" all mean the same route. Added routes carry no
-# destination: the API only names end stops for routes it says serve the stop.
-def apply_route_overrides(data, add: nil, remove: nil)
+# ?only=A46,T02&add=…&remove=… — hand-editing of the route list, for stops whose
+# upstream data is behind reality. Applied in that order: only keeps the listed
+# routes and drops the rest, remove drops more, add appends. Every side matches
+# on the normalised name, so "A47", Cyrillic "А47" and "47" all mean the same
+# route. Added routes carry no destination: the API only names end stops for
+# routes it says serve the stop.
+def apply_route_overrides(data, only: nil, add: nil, remove: nil)
   transfers = Array(data['transfers'])
 
-  removed = add_remove_tokens(remove).map { |token| normalize_route_name(token) }
+  kept = route_tokens(only).map { |token| normalize_route_name(token) }
+  transfers = transfers.select { |t| kept.include?(normalize_route_name(t['route'])) } if kept.any?
+
+  removed = route_tokens(remove).map { |token| normalize_route_name(token) }
   transfers = transfers.reject { |t| removed.include?(normalize_route_name(t['route'])) }
 
   present = transfers.map { |t| normalize_route_name(t['route']) }
 
-  add_remove_tokens(add).each do |token|
+  route_tokens(add).each do |token|
     name = normalize_route_name(token)
     next unless name.match?(ROUTE_TOKEN)
     next if present.include?(name)
@@ -127,7 +132,7 @@ def apply_route_overrides(data, add: nil, remove: nil)
   data.merge('transfers' => transfers)
 end
 
-def add_remove_tokens(value)
+def route_tokens(value)
   value.to_s.split(',').map(&:strip).reject(&:empty?)
 end
 
@@ -185,7 +190,7 @@ class App < Sinatra::Base
       stop_code = params['code']
 
       data = load_stop(stop_code)
-      data = apply_route_overrides(data, add: params['add'], remove: params['remove'])
+      data = apply_route_overrides(data, only: params['only'], add: params['add'], remove: params['remove'])
       transfers = get_transfers(data)
 
       data['name_en'] = eng_name_for(stop_code, data['eng_name'])
@@ -230,7 +235,7 @@ class App < Sinatra::Base
     stop_code = params['code']
 
     data = load_stop(stop_code)
-    data = apply_route_overrides(data, add: params['add'], remove: params['remove'])
+    data = apply_route_overrides(data, only: params['only'], add: params['add'], remove: params['remove'])
     transfers = get_transfers(data)
 
     n = detect_layout(transfers)

@@ -47,15 +47,16 @@ Every sticker is generated on the fly, no design tool involved. The layout is pi
 
 A bilingual 8386×7205 map of the city's electric transport, with the current stop pinned in the corner and its routes listed. Printed on the back of the sticker.
 
-### `?add=` / `?remove=` — fixing up the route list
+### `?only=` / `?add=` / `?remove=` — fixing up the route list
 
-Upstream data lags reality, so both routes take two optional comma-separated params:
+Upstream data lags reality, so both routes take three optional comma-separated params:
 
 ```
 /80?add=A46,T02&remove=T03,A47
+/80?only=A18,A57
 ```
 
-`remove` is applied first, then `add`. Names are matched after normalisation, so `A47`, Cyrillic `А47` and `47` all mean the same route; a route the stop already has is never added twice, and a name that is not a plain badge (`t2`, `47a`, `airport`) is ignored. Vehicle type of an added route comes from its prefix — `Т`/`T` trolleybus, `А`/`A` bus, `Н`/`N` night, bare digits tram — and its destination is left blank, because the API only names end stops for routes it says serve the stop.
+`only` keeps just the routes it names and drops the rest of the upstream list; it does not add anything, so a route the stop is not listed as serving needs `add`. The three are applied in order — `only`, then `remove`, then `add`. Names are matched after normalisation, so `A47`, Cyrillic `А47` and `47` all mean the same route; a route the stop already has is never added twice, and a name that is not a plain badge (`t2`, `47a`, `airport`) is ignored. Vehicle type of an added route comes from its prefix — `Т`/`T` trolleybus, `А`/`A` bus, `Н`/`N` night, bare digits tram — and its destination is left blank, because the API only names end stops for routes it says serve the stop.
 
 ---
 
@@ -138,7 +139,7 @@ gcloud run services update-traffic timetable-offline --project timetable-252615 
 
 ### 🔤 Route name normalisation
 
-Route names arrive in Cyrillic and have to map onto icon filenames. `А03` → `a03` → `a3` → `3` → `3a.svg`; `Т25` → `t25.svg`; `Аеропорт` → `airport.svg`. The rules live in `normalize_route_name`, and every route the API currently serves resolves to a real file. `?add=`/`?remove=` match on the same normalised name.
+Route names arrive in Cyrillic and have to map onto icon filenames. `А03` → `a03` → `a3` → `3` → `3a.svg`; `Т25` → `t25.svg`; `Аеропорт` → `airport.svg`. The rules live in `normalize_route_name`, and every route the API currently serves resolves to a real file. `?only=`/`?add=`/`?remove=` match on the same normalised name.
 
 ---
 
