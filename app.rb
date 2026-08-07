@@ -166,6 +166,10 @@ class App < Sinatra::Base
 
   before do
     headers 'X-Robots-Tag' => 'noindex, nofollow'
+    # Cloudflare bypasses these today, but only because of a rule that lives
+    # outside this repo; the query params make a stale sticker easy to hit, so
+    # say it here rather than rely on that.
+    cache_control :no_store
   end
 
   helpers do

@@ -47,6 +47,13 @@ RSpec.describe App do
         expect(last_response.headers['X-Robots-Tag']).to eq('noindex, nofollow')
       end
 
+      # The query params make a stale sticker easy to hit, and Cloudflare's
+      # bypass rule lives outside this repo.
+      it 'sets Cache-Control: no-store' do
+        get "/#{STOP_CODE}"
+        expect(last_response.headers['Cache-Control']).to include('no-store')
+      end
+
       it 'renders an SVG document' do
         get "/#{STOP_CODE}"
         expect(last_response.body).to include('<svg')
@@ -282,6 +289,11 @@ RSpec.describe App do
       it 'sets X-Robots-Tag: noindex, nofollow' do
         get "/#{STOP_CODE}/schema"
         expect(last_response.headers['X-Robots-Tag']).to eq('noindex, nofollow')
+      end
+
+      it 'sets Cache-Control: no-store' do
+        get "/#{STOP_CODE}/schema"
+        expect(last_response.headers['Cache-Control']).to include('no-store')
       end
 
       it 'renders an SVG document' do
