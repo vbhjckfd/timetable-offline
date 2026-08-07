@@ -97,17 +97,38 @@ def infer_vehicle_type(route)
   end
 end
 
+# A route the API does not list for the stop, built from its name alone. There
+# is no destination to give it: the API only names end stops for routes it says
+# serve the stop. nil for a name that is not a plain badge.
+def synthesized_route(token)
+  return nil unless normalize_route_name(token).match?(ROUTE_TOKEN)
+
+  {
+    'route' => token,
+    'vehicle_type' => infer_vehicle_type(token),
+    'end_stop_code' => nil,
+    'end_stop_name' => '',
+    'end_stop_eng_name' => '',
+  }
+end
+
 # ?only=A46,T02&add=…&remove=… — hand-editing of the route list, for stops whose
-# upstream data is behind reality. Applied in that order: only keeps the listed
-# routes and drops the rest, remove drops more, add appends. Every side matches
-# on the normalised name, so "A47", Cyrillic "А47" and "47" all mean the same
-# route. Added routes carry no destination: the API only names end stops for
-# routes it says serve the stop.
+# upstream data is behind reality. Applied in that order: only replaces the list
+# outright, remove drops routes, add appends them. Every side matches on the
+# normalised name, so "A47", Cyrillic "А47" and "47" all mean the same route.
+#
+# only is the whole list, in the order written: a name the API does list keeps
+# its upstream data, a name it does not is built from the name alone.
 def apply_route_overrides(data, only: nil, add: nil, remove: nil)
   transfers = Array(data['transfers'])
 
-  kept = route_tokens(only).map { |token| normalize_route_name(token) }
-  transfers = transfers.select { |t| kept.include?(normalize_route_name(t['route'])) } if kept.any?
+  kept = route_tokens(only).uniq { |token| normalize_route_name(token) }
+  if kept.any?
+    upstream = transfers.group_by { |t| normalize_route_name(t['route']) }
+    transfers = kept.flat_map do |token|
+      upstream[normalize_route_name(token)] || synthesized_route(token)
+    end.compact
+  end
 
   removed = route_tokens(remove).map { |token| normalize_route_name(token) }
   transfers = transfers.reject { |t| removed.include?(normalize_route_name(t['route'])) }
@@ -116,17 +137,13 @@ def apply_route_overrides(data, only: nil, add: nil, remove: nil)
 
   route_tokens(add).each do |token|
     name = normalize_route_name(token)
-    next unless name.match?(ROUTE_TOKEN)
     next if present.include?(name)
 
+    entry = synthesized_route(token)
+    next if entry.nil?
+
     present << name
-    transfers << {
-      'route' => token,
-      'vehicle_type' => infer_vehicle_type(token),
-      'end_stop_code' => nil,
-      'end_stop_name' => '',
-      'end_stop_eng_name' => '',
-    }
+    transfers << entry
   end
 
   data.merge('transfers' => transfers)

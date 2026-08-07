@@ -251,24 +251,45 @@ RSpec.describe '#apply_route_overrides' do
   end
 
   describe 'only' do
-    it 'keeps just the listed routes' do
+    it 'drops the routes it does not name' do
       result = apply_route_overrides(data('А47', 'А46', 'Т03'), only: 'A46,T03')
       expect(routes(result)).to eq(['А46', 'Т03'])
     end
 
-    it 'keeps the upstream order, not the param order' do
+    it 'lists the routes in the order written, not the upstream order' do
       result = apply_route_overrides(data('А47', 'А46'), only: 'A46,A47')
-      expect(routes(result)).to eq(['А47', 'А46'])
+      expect(routes(result)).to eq(['А46', 'А47'])
     end
 
-    it 'ignores a listed route that does not serve the stop' do
-      result = apply_route_overrides(data('А46'), only: 'A46,A99')
+    it 'adds a listed route that does not serve the stop' do
+      result = apply_route_overrides(data('А46'), only: 'A46,T03')
+      expect(routes(result)).to eq(['А46', 'T03'])
+    end
+
+    it 'keeps the upstream entry for a route the API does list' do
+      result = apply_route_overrides(data('А46'), only: 'A46')
+      expect(result['transfers'].first['end_stop_code']).to eq(2)
+    end
+
+    it 'builds a route the API does not list from its name' do
+      result = apply_route_overrides(data('А46'), only: 'T03')
+      expect(result['transfers'].first['vehicle_type']).to eq('trol')
+      expect(result['transfers'].first['end_stop_name']).to eq('')
+    end
+
+    it 'replaces the whole list when nothing it names is upstream' do
+      result = apply_route_overrides(data('А46'), only: 'T03')
+      expect(routes(result)).to eq(['T03'])
+    end
+
+    it 'does not list a route named twice' do
+      result = apply_route_overrides(data('А46'), only: 'A46,А46')
       expect(routes(result)).to eq(['А46'])
     end
 
-    it 'empties the list when nothing matches' do
-      result = apply_route_overrides(data('А46'), only: 'A99')
-      expect(routes(result)).to be_empty
+    it 'drops a name that is not a plain badge' do
+      result = apply_route_overrides(data('А46'), only: 'A46,../../etc/passwd')
+      expect(routes(result)).to eq(['А46'])
     end
 
     it 'leaves the list untouched when the param is absent' do
@@ -293,9 +314,13 @@ RSpec.describe '#apply_route_overrides' do
       expect(routes(result)).to eq(['А46', 'T02'])
     end
 
-    # only narrows the upstream list; add still appends on top of it.
     it 'appends an added route the only list does not name' do
       result = apply_route_overrides(data('А46', 'А47'), only: 'A46', add: 'T02')
+      expect(routes(result)).to eq(['А46', 'T02'])
+    end
+
+    it 'does not append an added route the only list already names' do
+      result = apply_route_overrides(data('А46'), only: 'A46,T02', add: 'T02')
       expect(routes(result)).to eq(['А46', 'T02'])
     end
 

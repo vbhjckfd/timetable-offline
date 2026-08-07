@@ -56,7 +56,7 @@ Upstream data lags reality, so both routes take three optional comma-separated p
 /80?only=A18,A57
 ```
 
-`only` keeps just the routes it names and drops the rest of the upstream list; it does not add anything, so a route the stop is not listed as serving needs `add`. The three are applied in order — `only`, then `remove`, then `add`. Names are matched after normalisation, so `A47`, Cyrillic `А47` and `47` all mean the same route; a route the stop already has is never added twice, and a name that is not a plain badge (`t2`, `47a`, `airport`) is ignored. Vehicle type of an added route comes from its prefix — `Т`/`T` trolleybus, `А`/`A` bus, `Н`/`N` night, bare digits tram — and its destination is left blank, because the API only names end stops for routes it says serve the stop.
+`only` is the whole route list, in the order written — names the API lists for the stop keep their upstream data, names it does not are built from the name alone, and everything else is dropped. The three are applied in order: `only`, then `remove`, then `add`. Names are matched after normalisation, so `A47`, Cyrillic `А47` and `47` all mean the same route; a route the stop already has is never added twice, and a name that is not a plain badge (`t2`, `47a`, `airport`) is ignored. Vehicle type of an added route comes from its prefix — `Т`/`T` trolleybus, `А`/`A` bus, `Н`/`N` night, bare digits tram — and its destination is left blank, because the API only names end stops for routes it says serve the stop.
 
 ---
 
