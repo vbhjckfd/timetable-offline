@@ -42,12 +42,19 @@ GLYPH_ROWS = [
     ([179, 180, 184, 185, 187, 209, 190, 213, 214, 36, 194, 219], "Ч7З'бчНхТовЄ"),
 ]
 
-# The drawing abbreviates / shortens some names the API spells out.
+# Labels the drawing spells differently from the API: abbreviated, or with a word more.
 ALIASES = {
-    'соборсвюра': 'соборсвятогоюра',
-    'церквасванни': 'церквасвятоїанни',
-    'палацкультуригнхоткевича': 'палацкультуригнатахоткевича',
+    'соборсвюра': ['соборсвятогоюра'],
+    'церквасванни': ['церквасвятоїанни'],
+    'палацкультуригнхоткевича': ['палацкультуригнатахоткевича'],
+    'площасоборна': ['соборна'],
+    'бкотика': ['котика', 'богданакотика'],
+    'сихівськарайадміністрація': ['сихівськара'],
+    'шевченківськарайадміністрація': ['шевченківськара'],
 }
+
+# Markers live in these groups; St. Anne's junction is drawn apart from the rest.
+MARKER_GROUPS = ('scheme-stops', 'scheme-anna')
 
 
 def key(s):
@@ -98,12 +105,20 @@ def write_sheet(glyphs, path):
 
 def load_markers():
     lines = open(SCHEME, encoding='utf8').read().split('\n')
-    start = next(i for i, l in enumerate(lines) if '<g id="scheme-stops">' in l)
-    end = next(i for i in range(start, len(lines)) if lines[i].startswith('</g>'))
     markers = []
-    for l in lines[start + 1:end]:
+    for group in MARKER_GROUPS:
+        start = next(i for i, l in enumerate(lines) if '<g id="%s">' % group in l)
+        end = next(i for i in range(start, len(lines)) if lines[i].startswith('</g>'))
+        markers += group_markers(lines[start + 1:end])
+    return markers
+
+
+def group_markers(lines):
+    markers = []
+    for l in lines:
         m = re.search(r' d="([^"]+)"', l)
-        if not m or 'stroke=' in l:  # every marker is drawn twice: fill, then outline
+        # a marker is a white shape (drawn again as an outline); the coloured bits are direction triangles
+        if not m or 'stroke=' in l or 'fill="#ffffff"' not in l:
             continue
         bp = BoundsPen(None)
         parse_path(m.group(1), bp)
@@ -151,14 +166,17 @@ def words(glyphs, letters):
 
 
 def labels(toks):
-    """Every way the words can read as a label: runs along one line, stacked up to 3 lines."""
+    """Every way the words can read as a label: runs along one line, stacked up to 3 lines.
+
+    `whole` is set when no word on the same line or aligned right above / below carries
+    on from it, so "Університет" inside "Медичний / університет" does not count."""
     cy = lambda t: (t['y0'] + t['y1']) / 2
     nxt = {}
     for i, t in enumerate(toks):
         best = None
         for j, u in enumerate(toks):
             gap = u['x0'] - t['x1']
-            if i != j and -1 < gap < 16 and abs(cy(u) - cy(t)) < 5 and (best is None or gap < best[0]):
+            if i != j and -1 < gap < 9 and abs(cy(u) - cy(t)) < 5 and (best is None or gap < best[0]):
                 best = (gap, j)
         if best:
             nxt[i] = best[1]
@@ -194,6 +212,12 @@ def labels(toks):
                         out.append(dict(text=ab['text'] + c['text'], toks=ab['toks'] | c['toks'],
                                         x0=min(ab['x0'], c['x0']), x1=max(ab['x1'], c['x1']),
                                         y0=min(ab['y0'], c['y0']), y1=max(ab['y1'], c['y1'])))
+    prev = {j: i for i, j in nxt.items()}
+    for c in out:
+        line_goes_on = any(nxt.get(i) not in c['toks'] and i in nxt or prev.get(i) not in c['toks'] and i in prev
+                           for i in c['toks'])
+        stacked = any(not (r['toks'] & c['toks']) and (below(r, c) or below(c, r)) for r in runs)
+        c['whole'] = not line_goes_on and not stacked
     return out
 
 
@@ -205,6 +229,57 @@ def dist(box, x, y):
 
 def poster(x, y):
     return round(x * SCHEME_SCALE + SCHEME_TX, 1), round((PAGE_H - y) * SCHEME_SCALE + SCHEME_TY, 1)
+
+
+def where(stops, spread=0.004):
+    """Name -> (lon, lat) where all stops of that name are close together (~300 m), else left out."""
+    by = collections.defaultdict(list)
+    for s in stops:
+        by[key(s['name'])].append(s['location'])
+    out = {}
+    for k, locs in by.items():
+        lats, lons = [l[0] for l in locs], [l[1] for l in locs]
+        if max(lats) - min(lats) < spread and max(lons) - min(lons) < spread:
+            out[k] = (sum(lons) / len(lons), sum(lats) / len(lats))
+    return out
+
+
+def untangle(pick, wanted, markers, geo):
+    """Two labels side by side can sit equally close to both their markers (Курмановича and
+    Каховська share one line of text-distance); swap them when the real stops lie the other way round."""
+    def place(label):
+        ks = [k for k in wanted[label][0] if k in geo]
+        return geo[ks[0]] if ks else None
+
+    def agree(a, ma, b, mb):  # >0: map points from a to b the way the street does
+        (lo1, la1), (lo2, la2) = place(a), place(b)
+        gx, gy = (lo2 - lo1) * 0.65, la2 - la1  # cos(49.8°) squeezes longitude
+        (x1, y1), (x2, y2) = markers[ma], markers[mb]
+        return gx * (x2 - x1) + gy * (y2 - y1)  # drawing's own y points north here
+
+    def reach(label):  # its own markers, and any other one right by it
+        out = dict((m, d) for d, m in wanted[label][1])
+        for m, xy in enumerate(markers):
+            d = dist(wanted[label][2], *xy)
+            if d < 25:
+                out.setdefault(m, d)
+        return out
+
+    labels = [l for l in pick if place(l)]
+    for i, a in enumerate(labels):
+        for b in labels[i + 1:]:
+            ma, mb = pick[a], pick[b]
+            if agree(a, ma, b, mb) >= 0:
+                continue
+            others = set(pick.values()) - {ma, mb}
+            da, db = reach(a), reach(b)
+            if not (set(da) & set(db)):  # nothing near both: not neighbours
+                continue
+            options = sorted((da[x] + db[y], x, y) for x in da for y in db
+                             if x != y and not {x, y} & others and agree(a, x, b, y) > 0)
+            if options:
+                _, pick[a], pick[b] = options[0]
+                print('re-picked %s / %s by geography' % (wanted[a][0], wanted[b][0]), file=sys.stderr)
 
 
 def merge_close(points, within=15):
@@ -240,24 +315,45 @@ def main():
     cands = labels(toks)
 
     raw = args.stops and open(args.stops).read() or urllib.request.urlopen('https://api.lad.lviv.ua/stops.json').read()
-    names = {key(s['name']) for s in json.loads(raw)}
+    stops = json.loads(raw)
+    names = {key(s['name']) for s in stops}
 
     # each marker belongs to the word it is closest to; a label owns the markers whose word is part of it
     owner = [min(range(len(toks)), key=lambda i: dist(toks[i], mx, my)) for mx, my in markers]
 
-    found = collections.defaultdict(set)
+    # One marker per label on the drawing: two sides of a street are one marker there, and a
+    # second pick is the neighbour's. Hand markers out nearest first so neighbours cannot share one.
+    wanted = {}  # label's words -> (names it stands for, [(distance, marker)])
     for c in cands:
-        k = ALIASES.get(key(c['text']), key(c['text']))
-        if k not in names:
+        k = key(c['text'])
+        if k in ALIASES:
+            ks = ALIASES[k]
+        elif c['whole'] and k in names:
+            ks = [k]
+        else:
             continue
         mine = [(dist(c, *markers[m]), m) for m in range(len(markers)) if owner[m] in c['toks']]
         mine = [(d, m) for d, m in mine if d < 40]
-        if mine:
-            near = min(d for d, _ in mine)
-            spots = {markers[m] for d, m in mine if d <= near + 6}
-        else:  # no marker claims it: park the pin at the start of the label
-            spots = {(c['x0'] - 6, (c['y0'] + c['y1']) / 2)}
-        found[k] |= spots
+        if not mine:  # a neighbour's word sits closer to the marker; take it if it is right by the label
+            mine = [(d, m) for d, m in ((dist(c, *markers[m]), m) for m in range(len(markers))) if d < 25]
+        if not mine:  # no marker by it at all: better no pin than one on whatever is next to the label
+            print('no marker near %r' % c['text'], file=sys.stderr)
+            continue
+        wanted[frozenset(c['toks'])] = (ks, mine, c)
+
+    pick, taken = {}, set()
+    for d, m, label in sorted((d, m, l) for l, (_, mine, _) in wanted.items() for d, m in mine):
+        if label not in pick and m not in taken:
+            pick[label] = m
+            taken.add(m)
+    for label in set(wanted) - set(pick):
+        print('every marker near %r went to a closer label' % wanted[label][0], file=sys.stderr)
+    untangle(pick, wanted, markers, where(stops))
+
+    found = collections.defaultdict(set)
+    for label, m in pick.items():
+        for k in wanted[label][0]:
+            found[k].add(markers[m])
 
     result = {k: merge_close([poster(x, y) for x, y in sorted(v)]) for k, v in sorted(found.items())}
     json.dump(result, open(OUT, 'w'), ensure_ascii=False, indent=1)
