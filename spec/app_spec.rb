@@ -382,6 +382,22 @@ RSpec.describe App do
 
   # ── upstream request construction ───────────────────────────────────────────
 
+  # ── GET /:code/schema-1 ─────────────────────────────────────────────────────
+
+  describe 'GET /:code/schema-1 you-are-here pin' do
+    it 'pins the stop where its name sits on the drawing' do
+      stub_stop(body: valid_body)
+      get "/#{STOP_CODE}/schema-1"
+      expect(last_response.body.scan('class="you-are-here"').length).to eq(1)
+    end
+
+    it 'draws no pin for a name the drawing does not carry' do
+      stub_stop(body: valid_body(name: 'Нема такої зупинки'))
+      get "/#{STOP_CODE}/schema-1"
+      expect(last_response.body).not_to include('class="you-are-here"')
+    end
+  end
+
   describe 'upstream URL construction' do
     it 'percent-encodes the stop code instead of interpolating it raw' do
       escaped = stub_request(:get, "#{API_BASE}/stops/%D0%90/static")

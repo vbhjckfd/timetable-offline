@@ -149,6 +149,14 @@ def apply_route_overrides(data, only: nil, add: nil, remove: nil)
   data.merge('transfers' => transfers)
 end
 
+# Where each stop name sits on the scheme-1 drawing, poster coordinates; built by
+# tools/extract_map_labels.py. Names are matched the way that script keys them.
+MAP_LABELS = JSON.parse(File.read(File.join(__dir__, 'data', 'map_labels.json'))).freeze
+
+def map_pins_for(name)
+  MAP_LABELS.fetch(name.to_s.downcase.gsub(/[^[:alnum:]]/, ''), [])
+end
+
 def route_tokens(value)
   value.to_s.split(',').map(&:strip).reject(&:empty?)
 end
@@ -219,7 +227,8 @@ class App < Sinatra::Base
       erb template,
       :locals => {
         data: data,
-        transfers: transfers
+        transfers: transfers,
+        pins: map_pins_for(data['name'])
       },
       content_type: 'image/svg+xml'
     end
