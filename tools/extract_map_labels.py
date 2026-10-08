@@ -5,8 +5,9 @@ The drawing has no <text>: every label is a run of glyph outlines. This script
   1. clusters the black (Ukrainian) glyph paths by outline, so one cluster is one letter,
   2. spells the clusters out via GLYPHS below (read off a contact sheet by eye),
   3. rebuilds the words and the one-to-three line labels they form,
-  4. pins each label to the stop marker(s) nearest to it,
-  5. writes data/map_labels.json: normalised stop name -> [[x, y], ...] in poster coordinates.
+  4. pins each label to the stop marker nearest to it that serves the name's tram/trolleybus routes,
+  5. writes data/map_labels.json: normalised stop name -> [[x, y, [route numbers]], ...] in poster
+     coordinates; the app keeps the pins on the stop's own routes, as some names sit on two lines.
 
 Redo it whenever the drawing changes (the cluster ids will change too; run with
 --sheet to get a new contact sheet to read). Needs fontTools:  pip install fonttools
@@ -56,6 +57,15 @@ ALIASES = {
 # Markers live in these groups; St. Anne's junction is drawn apart from the rest.
 MARKER_GROUPS = ('scheme-stops', 'scheme-anna')
 
+# Route lines, and the number on each line's end badge (trams 1-9, trolleybuses 22-38).
+# Read off scheme-numbers-bold; badge fills differ from line strokes by a shade, so match nearest.
+LINE_GROUPS = ('scheme-tmp-29', 'scheme-routes', 'scheme-tmp-30', 'scheme-anna')
+ROUTE_COLOURS = {
+    '#e41e0e': 1, '#915134': 2, '#4baf50': 3, '#009bd6': 4, '#933d90': 6, '#0c67b1': 7, '#929292': 8,
+    '#0f5c1c': 9, '#359a7a': 22, '#ba7f5e': 23, '#e8e348': 24, '#e94d09': 25, '#afca06': 27,
+    '#25328a': 29, '#f086a9': 30, '#078e2e': 31, '#e50063': 32, '#6f7e28': 33, '#9c0b01': 38,
+}
+
 
 def key(s):
     return ''.join(c for c in s.lower() if c.isalnum())
@@ -103,14 +113,68 @@ def write_sheet(glyphs, path):
                           % ((len(order) + 11) // 12 * 70, ''.join(cells)))
 
 
+def group_lines(lines, group):
+    start = next(i for i, l in enumerate(lines) if '<g id="%s">' % group in l)
+    end = next(i for i in range(start, len(lines)) if lines[i].startswith('</g>'))
+    return lines[start + 1:end]
+
+
 def load_markers():
+    """Marker centres, and the route numbers of the lines running through each."""
     lines = open(SCHEME, encoding='utf8').read().split('\n')
     markers = []
     for group in MARKER_GROUPS:
-        start = next(i for i, l in enumerate(lines) if '<g id="%s">' % group in l)
-        end = next(i for i in range(start, len(lines)) if lines[i].startswith('</g>'))
-        markers += group_markers(lines[start + 1:end])
-    return markers
+        markers += group_markers(group_lines(lines, group))
+    route_lines = [(r, segs) for group in LINE_GROUPS for r, segs in group_routes(group_lines(lines, group))]
+    routes = [{r for r, segs in route_lines if any(seg_dist(x, y, a, b) <= size / 2 + 1.5 for a, b in segs)}
+              for x, y, size in markers]
+    return [(x, y) for x, y, _ in markers], routes
+
+
+def route_of(colour):
+    rgb = lambda h: [int(h[i:i + 2], 16) for i in (1, 3, 5)]
+    off = lambda c: sum((a - b) ** 2 for a, b in zip(rgb(c), rgb(colour)))
+    best = min(ROUTE_COLOURS, key=off)
+    return ROUTE_COLOURS[best] if off(best) < 300 else None
+
+
+def group_routes(lines):
+    for l in lines:
+        stroke, d = re.search(r'stroke="(#[0-9a-f]{6})"', l), re.search(r' d="([^"]+)"', l)
+        route = stroke and d and route_of(stroke.group(1))
+        if route:
+            yield route, flatten(d.group(1))
+
+
+def flatten(d):
+    """Path -> line segments, curves cut into eight."""
+    rec = RecordingPen()
+    parse_path(d, rec)
+    segs, cur, start = [], None, None
+    for op, args in rec.value:
+        if op == 'moveTo':
+            cur = start = args[0]
+        elif op == 'curveTo':
+            (p1, p2, p3), p0 = args, cur
+            for k in range(1, 9):
+                t, u = k / 8, 1 - k / 8
+                q = tuple(u ** 3 * p0[i] + 3 * u * u * t * p1[i] + 3 * u * t * t * p2[i] + t ** 3 * p3[i] for i in (0, 1))
+                segs.append((cur, q))
+                cur = q
+        elif op in ('lineTo', 'qCurveTo'):
+            for q in args:
+                segs.append((cur, q))
+                cur = q
+        elif op == 'closePath' and cur != start:
+            segs.append((cur, start))
+    return segs
+
+
+def seg_dist(x, y, a, b):
+    (ax, ay), (bx, by) = a, b
+    dx, dy = bx - ax, by - ay
+    t = max(0, min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy))) if dx or dy else 0
+    return ((x - ax - t * dx) ** 2 + (y - ay - t * dy) ** 2) ** 0.5
 
 
 def group_markers(lines):
@@ -123,7 +187,7 @@ def group_markers(lines):
         bp = BoundsPen(None)
         parse_path(m.group(1), bp)
         x0, y0, x1, y1 = bp.bounds
-        markers.append(((x0 + x1) / 2, (y0 + y1) / 2))
+        markers.append(((x0 + x1) / 2, (y0 + y1) / 2, max(x1 - x0, y1 - y0)))
     return markers
 
 
@@ -244,7 +308,7 @@ def where(stops, spread=0.004):
     return out
 
 
-def untangle(pick, wanted, markers, geo):
+def untangle(pick, wanted, markers, geo, marker_routes, served):
     """Two labels side by side can sit equally close to both their markers (Курмановича and
     Каховська share one line of text-distance); swap them when the real stops lie the other way round."""
     def place(label):
@@ -257,11 +321,12 @@ def untangle(pick, wanted, markers, geo):
         (x1, y1), (x2, y2) = markers[ma], markers[mb]
         return gx * (x2 - x1) + gy * (y2 - y1)  # drawing's own y points north here
 
-    def reach(label):  # its own markers, and any other one right by it
+    def reach(label):  # its own markers, and any other one right by it on one of its lines
         out = dict((m, d) for d, m in wanted[label][1])
+        lines = set().union(*(served[k] for k in wanted[label][0]))
         for m, xy in enumerate(markers):
             d = dist(wanted[label][2], *xy)
-            if d < 25:
+            if d < 25 and (not lines or marker_routes[m] & lines):
                 out.setdefault(m, d)
         return out
 
@@ -282,13 +347,24 @@ def untangle(pick, wanted, markers, geo):
                 print('re-picked %s / %s by geography' % (wanted[a][0], wanted[b][0]), file=sys.stderr)
 
 
+def electric_routes(stops):
+    """Name -> numbers of the trams and trolleybuses (Т01, Т22, ...) its stops serve."""
+    out = collections.defaultdict(set)
+    for s in stops:
+        out[key(s['name'])] |= {int(r[1:]) for r in s['routes'] if r[:1] in 'ТT' and r[1:].isdigit()}
+    return out
+
+
 def merge_close(points, within=15):
     """Interchange markers are several squares in a row; one pin is enough for those."""
     out = []
-    for p in points:
-        if all(abs(p[0] - q[0]) > within or abs(p[1] - q[1]) > within for q in out):
-            out.append(p)
-    return [list(p) for p in out]
+    for x, y, routes in points:
+        near = [p for p in out if abs(p[0] - x) <= within and abs(p[1] - y) <= within]
+        if near:
+            near[0][2] = sorted(set(near[0][2]) | routes)
+        else:
+            out.append([x, y, sorted(routes)])
+    return out
 
 
 def main():
@@ -311,12 +387,13 @@ def main():
         sys.exit('clusters with no letter (redo GLYPH_ROWS from a --sheet): %s' % sorted(unknown))
 
     toks = words(glyphs, letters)
-    markers = load_markers()
+    markers, marker_routes = load_markers()
     cands = labels(toks)
 
     raw = args.stops and open(args.stops).read() or urllib.request.urlopen('https://api.lad.lviv.ua/stops.json').read()
     stops = json.loads(raw)
     names = {key(s['name']) for s in stops}
+    served = electric_routes(stops)
 
     # each marker belongs to the word it is closest to; a label owns the markers whose word is part of it
     owner = [min(range(len(toks)), key=lambda i: dist(toks[i], mx, my)) for mx, my in markers]
@@ -332,30 +409,51 @@ def main():
             ks = [k]
         else:
             continue
-        mine = [(dist(c, *markers[m]), m) for m in range(len(markers)) if owner[m] in c['toks']]
-        mine = [(d, m) for d, m in mine if d < 40]
-        if not mine:  # a neighbour's word sits closer to the marker; take it if it is right by the label
-            mine = [(d, m) for d, m in ((dist(c, *markers[m]), m) for m in range(len(markers))) if d < 25]
+        near = [(dist(c, *markers[m]), m) for m in range(len(markers))]
+        own = [(d, m) for d, m in near if d < 40 and owner[m] in c['toks']]
+        near = [(d, m) for d, m in near if d < 25]  # a neighbour's word may sit closer to it
+        # a marker on none of the name's tram/trolleybus lines is a neighbour's
+        lines = set().union(*(served[k] for k in ks))
+        if lines:
+            own = [(d, m) for d, m in own if marker_routes[m] & lines]
+            near = [(d, m) for d, m in near if marker_routes[m] & lines]
+        mine = sorted(set(own) | set(near)) if lines else own or near
         if not mine:  # no marker by it at all: better no pin than one on whatever is next to the label
             print('no marker near %r' % c['text'], file=sys.stderr)
             continue
         wanted[frozenset(c['toks'])] = (ks, mine, c)
 
+    # labels whose own line runs through the marker go first: Океан (buses only) must not take
+    # the tram-3 marker Бойчука sits on just because its word is 2 units nearer
+    def confirmed(label, m):
+        return bool(marker_routes[m] & set().union(*(served[k] for k in wanted[label][0])))
+
     pick, taken = {}, set()
-    for d, m, label in sorted((d, m, l) for l, (_, mine, _) in wanted.items() for d, m in mine):
+    for _, d, m, label in sorted((not confirmed(l, m), d, m, l) for l, (_, mine, _) in wanted.items() for d, m in mine):
         if label not in pick and m not in taken:
             pick[label] = m
             taken.add(m)
     for label in set(wanted) - set(pick):
         print('every marker near %r went to a closer label' % wanted[label][0], file=sys.stderr)
-    untangle(pick, wanted, markers, where(stops))
+    untangle(pick, wanted, markers, where(stops), marker_routes, served)
 
-    found = collections.defaultdict(set)
-    for label, m in pick.items():
+    # A name served by two lines can sit on both (Бандери: trolleybuses 22/30 and trams 4/9 stop
+    # apart): give the label one more marker for each of its lines the first one misses.
+    chosen = {label: [m] for label, m in pick.items()}
+    for label, m in sorted(pick.items(), key=lambda lm: min(d for d, _ in wanted[lm[0]][1])):
+        lines = set().union(*(served[k] for k in wanted[label][0]))
+        for d, extra in sorted(wanted[label][1]):
+            missing = lines - set().union(*(marker_routes[x] for x in chosen[label]))
+            if extra not in taken and marker_routes[extra] & missing:
+                chosen[label].append(extra)
+                taken.add(extra)
+
+    found = collections.defaultdict(list)
+    for label, ms in chosen.items():
         for k in wanted[label][0]:
-            found[k].add(markers[m])
+            found[k] += [(*poster(*markers[m]), marker_routes[m]) for m in ms]
 
-    result = {k: merge_close([poster(x, y) for x, y in sorted(v)]) for k, v in sorted(found.items())}
+    result = {k: merge_close(sorted(v, key=lambda p: p[:2])) for k, v in sorted(found.items())}
     json.dump(result, open(OUT, 'w'), ensure_ascii=False, indent=1)
     print('%d of %d stop names found on the drawing -> %s' % (len(result), len(names), os.path.relpath(OUT, ROOT)))
 

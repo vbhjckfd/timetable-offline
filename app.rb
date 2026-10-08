@@ -149,12 +149,22 @@ def apply_route_overrides(data, only: nil, add: nil, remove: nil)
   data.merge('transfers' => transfers)
 end
 
-# Where each stop name sits on the scheme-1 drawing, poster coordinates; built by
+# Where each stop name sits on the scheme-1 drawing, poster coordinates, with the tram
+# and trolleybus numbers whose lines run through each spot; built by
 # tools/extract_map_labels.py. Names are matched the way that script keys them.
 MAP_LABELS = JSON.parse(File.read(File.join(__dir__, 'data', 'map_labels.json'))).freeze
 
-def map_pins_for(name)
-  MAP_LABELS.fetch(name.to_s.downcase.gsub(/[^[:alnum:]]/, ''), [])
+ELECTRIC_TYPES = %w[tram trolleybus trol].freeze
+
+# Some names sit on the drawing twice, once per line (Залізняка: trolleybuses 22/30 and
+# tram 2 stop apart), so keep the spots on this stop's own lines. A stop on none of
+# them (buses only, or a line the drawing does not pin there) keeps them all.
+def map_pins_for(name, transfers)
+  pins = MAP_LABELS.fetch(name.to_s.downcase.gsub(/[^[:alnum:]]/, ''), [])
+  lines = Array(transfers).select { |t| ELECTRIC_TYPES.include?(t['vehicle_type']) }
+                          .map { |t| t['route'].to_s.gsub(/\D/, '').to_i }
+  ours = pins.select { |_, _, served| (Array(served) & lines).any? }
+  (ours.empty? ? pins : ours).map { |x, y, _| [x, y] }
 end
 
 def route_tokens(value)
@@ -228,7 +238,7 @@ class App < Sinatra::Base
       :locals => {
         data: data,
         transfers: transfers,
-        pins: map_pins_for(data['name'])
+        pins: map_pins_for(data['name'], data['transfers'])
       },
       content_type: 'image/svg+xml'
     end

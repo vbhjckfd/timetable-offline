@@ -386,9 +386,24 @@ RSpec.describe App do
 
   describe 'GET /:code/schema-1 you-are-here pin' do
     it 'pins the stop where its name sits on the drawing' do
-      stub_stop(body: valid_body)
+      transfers = [{ 'route' => 'Т25', 'vehicle_type' => 'trolleybus', 'end_stop_code' => END_STOP_CODE }]
+      stub_stop(body: valid_body(transfers: transfers))
       get "/#{STOP_CODE}/schema-1"
       expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
+    end
+
+    it 'keeps only the pin on the stop\'s own line when its name sits on two' do
+      transfers = [{ 'route' => 'Т02', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE }]
+      stub_stop(body: valid_body(name: 'Залізняка', transfers: transfers))
+      get "/#{STOP_CODE}/schema-1"
+      expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
+    end
+
+    it 'keeps every pin of the name when none is on the stop\'s lines' do
+      transfers = [{ 'route' => 'А33', 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }]
+      stub_stop(body: valid_body(name: 'Залізняка', transfers: transfers))
+      get "/#{STOP_CODE}/schema-1"
+      expect(last_response.body.scan('fil84 you-are-here"').length).to eq(2)
     end
 
     it 'shrinks a longer stop code to fit the title pin' do
