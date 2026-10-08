@@ -10658,10 +10658,12 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
    <circle class="fil5" cx="451.7" cy="379.73" r="197.03"/>
   </g>
   <%
-    stop_code_length = data['code'].to_s.length
-    stop_code_shift = (stop_code_length - 1) * 40;
+    # The code sits centred in the pin's white circle (r 197). Digits are 0.536em wide and
+    # 0.674em tall in Myriad Semibold, so longer codes need a smaller size to stay inside it.
+    stop_code = data['code'].to_s
+    stop_code_size = { 1 => 219, 2 => 219, 3 => 180, 4 => 140 }.fetch(stop_code.length, 112)
   %>
-  <text id="stop-id" x="<%= 387.27 - stop_code_shift %>" y="454.87"  class="fil82 <%= stop_code_length == 4 ? 'fnt28-1' : 'fnt28' %>"><%= data['code'] %></text>
+  <text id="stop-id" x="451.7" y="<%= (379.73 + 0.337 * stop_code_size).round(2) %>" text-anchor="middle" class="fil82 fnt28" style="font-size:<%= stop_code_size %>px"><%= stop_code %></text>
   <% pins.each do |x, y| %>
   <circle class="fil84 you-are-here" cx="<%= x %>" cy="<%= y %>" r="14"/>
   <% end %>

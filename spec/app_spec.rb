@@ -391,6 +391,12 @@ RSpec.describe App do
       expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
     end
 
+    it 'shrinks a longer stop code to fit the title pin' do
+      stub_stop(body: valid_body(code: 1001))
+      get "/#{STOP_CODE}/schema-1"
+      expect(last_response.body).to include('style="font-size:140px">1001</text>')
+    end
+
     it 'draws no pin for a name the drawing does not carry' do
       stub_stop(body: valid_body(name: 'Нема такої зупинки'))
       get "/#{STOP_CODE}/schema-1"
