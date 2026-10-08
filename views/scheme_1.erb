@@ -2359,13 +2359,15 @@ viewBox="0 0 8386 7204.87">
   </font>
   <style type="text/css">
    <![CDATA[
-    @font-face { font-family:"NatGrotesk";font-variant:normal;font-style:normal;font-weight:normal;src:url("#FontID17") format(svg)}
-    @font-face { font-family:"Tahoma";font-variant:normal;font-style:normal;font-weight:normal;src:url("#FontID13") format(svg)}
-    @font-face { font-family:"Myriad Pro Light";font-variant:normal;font-style:normal;font-weight:600;src:url("#FontID11") format(svg)}
-    @font-face { font-family:"YK Digits";font-variant:normal;font-style:normal;font-weight:normal;src:url("#FontID9") format(svg)}
-    @font-face { font-family:"Myriad Pro";font-variant:normal;font-weight:bold;src:url("#FontID6") format(svg)}
-    @font-face { font-family:"Segoe UI";font-variant:normal;font-style:normal;font-weight:normal;src:url("#FontID1") format(svg)}
-    @font-face { font-family:"Myriad Pro";font-variant:normal;font-style:normal;font-weight:normal;src:url("#FontID0") format(svg)}
+    <%# Browsers ignore SVG fonts, so the drawing's own <font> glyphs never render and the
+        title, stop code and route directions fall back to a serif. Myriad Pro is what the
+        drawing was set in; embed it the way fonts.erb does for the stickers. %>
+    <% myriad = ->(file) { Base64.strict_encode64(File.binread(File.join(settings.root, 'public', 'fonts', file))) } %>
+    <% regular = myriad.call('MyriadPro/MyriadPro-Regular.otf') %>
+    @font-face { font-family:"NatGrotesk";font-weight:normal;src:url("data:font/otf;base64,<%= regular %>") format("opentype")}
+    @font-face { font-family:"Myriad Pro";font-weight:normal;src:url("data:font/otf;base64,<%= regular %>") format("opentype")}
+    @font-face { font-family:"Myriad Pro Light";font-weight:600;src:url("data:font/ttf;base64,<%= myriad.call('MyriadPro-Light1.ttf') %>") format("truetype")}
+    @font-face { font-family:"YK Digits";font-weight:normal;src:url("data:font/otf;base64,<%= myriad.call('MyriadPro/MyriadPro-Semibold.otf') %>") format("opentype")}
     .str0 {stroke:#DFF1FD;stroke-width:23.62;stroke-miterlimit:22.9256}
     .str9 {stroke:#3E9B7D;stroke-width:8.86;stroke-miterlimit:22.9256}
     .str6 {stroke:#9DA7B3;stroke-width:5.91;stroke-miterlimit:22.9256}
@@ -2779,6 +2781,11 @@ viewBox="0 0 8386 7204.87">
 <path transform="matrix(1,0,0,-1,0,2267.7166)" d="M910.317 1441.5032 909.1123 1436.4595 905.5471 1440.2251 908.1522 1440.0425Z" fill="#0c67b1" fill-rule="evenodd"/>
 <path transform="matrix(1,0,0,-1,0,2267.7166)" d="M918.5386 1443.678 917.3339 1438.6343 913.7687 1442.4002 916.3738 1442.2173Z" fill="#933d90" fill-rule="evenodd"/>
 </g>
+<%# The halo of each you-are-here pin sits under the drawing's labels, stops and icons
+    (accessibility marks included) so none of them is covered; poster coordinates -> drawing's. %>
+<% pins.each do |x, y| %>
+<circle class="fil83" cx="<%= ((x - 623.71) / 3.065).round(2) %>" cy="<%= ((y - 178.2) / 3.065).round(2) %>" r="27.9"/>
+<% end %>
 <g id="scheme-text">
 <path transform="matrix(1,0,0,-1,0,2267.7166)" d="M594.9958 1612.9716H593.3038C593.4719 1613.2595 593.6397 1613.6254 593.8078 1614.0696 593.8917 1614.3095 594.0088 1614.6635 594.1587 1615.1315 594.3087 1615.5995 594.438 1615.9805 594.546 1616.2744 594.654 1616.5684 594.8039 1616.8955 594.9958 1617.2555 595.1877 1617.6155 595.3978 1617.9094 595.626 1618.1376 595.914 1618.4257 596.2558 1618.6354 596.6518 1618.7675V1618.8035C595.8717 1618.9356 595.23 1619.2655 594.726 1619.7936 594.222 1620.3214 593.97 1620.9876 593.97 1621.7915 593.97 1622.8355 594.3419 1623.6516 595.086 1624.2395 595.8539 1624.8756 597.0118 1625.1936 598.5598 1625.1936 599.5678 1625.1936 600.5339 1625.1094 601.458 1624.9417V1612.9716H599.8918V1618.2276H598.722C597.966 1618.2276 597.39 1618.0296 596.994 1617.6336 596.742 1617.3816 596.5228 1617.0454 596.3369 1616.6256 596.1509 1616.2055 595.9647 1615.6834 595.7787 1615.0595 595.5928 1614.4356 595.4638 1614.0336 595.3918 1613.8536 595.2478 1613.5175 595.1157 1613.2235 594.9958 1612.9716ZM599.8918 1619.4515V1623.8256C599.5318 1623.9214 599.0338 1623.9696 598.398 1623.9696 597.5578 1623.9696 596.8738 1623.7896 596.346 1623.4296 595.8179 1623.0696 595.554 1622.4996 595.554 1621.7195 595.554 1621.0114 595.8329 1620.4505 596.3907 1620.0366 596.9489 1619.6224 597.6717 1619.4155 598.5598 1619.4155 599.2438 1619.4155 599.6877 1619.4274 599.8918 1619.4515" fill="#1a1a18"/>
 <path transform="matrix(1,0,0,-1,0,2267.7166)" d="M604.086 1621.6835H605.67V1618.1736H609.7921V1621.6835H611.3761V1612.9716H609.7921V1616.9136H605.67V1612.9716H604.086Z" fill="#1a1a18"/>
@@ -10655,10 +10662,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
   %>
   <text id="stop-id" x="<%= 387.27 - stop_code_shift %>" y="454.87"  class="fil82 <%= stop_code_length == 4 ? 'fnt28-1' : 'fnt28' %>"><%= data['code'] %></text>
   <% pins.each do |x, y| %>
-  <g class="you-are-here" transform="translate(<%= x - 4823.03 %>, <%= y - 4695.17 %>)">
-   <path class="fil83" d="M4823.03 4609.64c47.23,0 85.53,38.29 85.53,85.53 0,47.23 -38.3,85.53 -85.53,85.53 -47.24,0 -85.53,-38.3 -85.53,-85.53 0,-47.24 38.29,-85.53 85.53,-85.53z"/>
-   <circle class="fil84" cx="4823.03" cy="4695.17" r="19.18"/>
-  </g>
+  <circle class="fil84 you-are-here" cx="<%= x %>" cy="<%= y %>" r="14"/>
   <% end %>
  </g>
  <g id="Legends">

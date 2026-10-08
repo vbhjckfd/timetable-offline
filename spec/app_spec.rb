@@ -388,13 +388,13 @@ RSpec.describe App do
     it 'pins the stop where its name sits on the drawing' do
       stub_stop(body: valid_body)
       get "/#{STOP_CODE}/schema-1"
-      expect(last_response.body.scan('class="you-are-here"').length).to eq(1)
+      expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
     end
 
     it 'draws no pin for a name the drawing does not carry' do
       stub_stop(body: valid_body(name: 'Нема такої зупинки'))
       get "/#{STOP_CODE}/schema-1"
-      expect(last_response.body).not_to include('class="you-are-here"')
+      expect(last_response.body).not_to include('fil84 you-are-here"')
     end
   end
 
