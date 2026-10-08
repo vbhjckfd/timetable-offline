@@ -182,6 +182,13 @@ RSpec.describe App do
         expect(last_response.status).to eq(404)
       end
 
+      it 'serves an HTML 404 page carrying the og:image' do
+        stub_request(:get, "#{API_BASE}/stops/9999/static").to_return(status: 404, body: '')
+        get '/9999'
+        expect(last_response.content_type).to include('text/html')
+        expect(last_response.body).to include('og:image" content="https://offline.lad.lviv.ua/og-404.jpg')
+      end
+
       it 'returns 503 when the API response is not valid JSON' do
         stub_stop(body: 'not json at all')
         get "/#{STOP_CODE}"

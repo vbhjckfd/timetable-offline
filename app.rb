@@ -190,7 +190,7 @@ class App < Sinatra::Base
       end
 
       halt 400, 'Код зупинки має бути числом, на кшталт 128' if response.status == 400
-      halt 404, 'Неправильний код зупинки' if response.status == 404
+      halt 404, erb(:not_found, layout: false, content_type: 'text/html') if response.status == 404
       halt 503, 'Сервіс тимчасово недоступний' unless response.success?
 
       begin
