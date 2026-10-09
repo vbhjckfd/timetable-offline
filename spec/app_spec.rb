@@ -280,6 +280,12 @@ RSpec.describe App do
   # ── GET /:code/schema ───────────────────────────────────────────────────────
 
   describe 'GET /:code/schema' do
+    it 'carries the QR code to the stop page' do
+      stub_stop(body: valid_body)
+      get "/#{STOP_CODE}/schema"
+      expect(last_response.body).to include('id="stop-qr"')
+    end
+
     context 'with a tram line on the drawing' do
       before do
         stub_stop(body: valid_body(transfers: [

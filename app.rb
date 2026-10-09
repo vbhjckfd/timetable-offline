@@ -287,6 +287,16 @@ class App < Sinatra::Base
   end
 
   helpers do
+    def qr_svg(stop_code)
+      RQRCode::QRCode.new("https://lad.lviv.ua/#{stop_code}").as_svg(
+        offset: 0,
+        color: '000',
+        shape_rendering: 'crispEdges',
+        module_size: 6,
+        standalone: true
+      ).to_s.sub('<?xml version="1.0" standalone="yes"?>', '')
+    end
+
     def load_stop(stop_code)
       api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
       # url_encode, not raw interpolation: Sinatra decodes %2F after matching
@@ -329,7 +339,8 @@ class App < Sinatra::Base
     :locals => {
       data: data,
       transfers: transfers,
-      spot: map_spot_for(stop_code, data['name'], data['transfers'])
+      spot: map_spot_for(stop_code, data['name'], data['transfers']),
+      qrcode: qr_svg(stop_code)
     },
     content_type: 'image/svg+xml'
   end
@@ -376,15 +387,6 @@ class App < Sinatra::Base
 
     n = detect_layout(transfers)
 
-    qrcode = RQRCode::QRCode.new("https://lad.lviv.ua/#{stop_code}")
-    svg = qrcode.as_svg(
-      offset: 0,
-      color: '000',
-      shape_rendering: 'crispEdges',
-      module_size: 6,
-      standalone: true
-    ).to_s.sub('<?xml version="1.0" standalone="yes"?>', '')
-
     [
       'Винники, ',
       'Винники. ',
@@ -414,7 +416,7 @@ class App < Sinatra::Base
     :locals => {
       data: data,
       transfers: transfers,
-      qrcode: svg,
+      qrcode: qr_svg(stop_code),
     },
     content_type: 'image/svg+xml'
   end
