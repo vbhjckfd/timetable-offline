@@ -382,40 +382,57 @@ RSpec.describe App do
 
   # ── upstream request construction ───────────────────────────────────────────
 
-  # ── GET /:code/schema-1 ─────────────────────────────────────────────────────
+  # ── GET /:code/schema pin ──────────────────────────────────────────────────
 
-  describe 'GET /:code/schema-1 you-are-here pin' do
+  describe 'GET /:code/schema you-are-here pin' do
     it 'pins the stop where its name sits on the drawing' do
       transfers = [{ 'route' => 'Т25', 'vehicle_type' => 'trolleybus', 'end_stop_code' => END_STOP_CODE }]
       stub_stop(body: valid_body(transfers: transfers))
-      get "/#{STOP_CODE}/schema-1"
+      get "/#{STOP_CODE}/schema"
       expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
     end
 
     it 'keeps only the pin on the stop\'s own line when its name sits on two' do
       transfers = [{ 'route' => 'Т02', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE }]
       stub_stop(body: valid_body(name: 'Залізняка', transfers: transfers))
-      get "/#{STOP_CODE}/schema-1"
+      get "/#{STOP_CODE}/schema"
       expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
     end
 
     it 'keeps every pin of the name when none is on the stop\'s lines' do
       transfers = [{ 'route' => 'А33', 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }]
       stub_stop(body: valid_body(name: 'Залізняка', transfers: transfers))
-      get "/#{STOP_CODE}/schema-1"
+      get "/#{STOP_CODE}/schema"
       expect(last_response.body.scan('fil84 you-are-here"').length).to eq(2)
+    end
+
+    it 'places a hand-pinned stop by its code, not its name' do
+      stub_request(:get, "#{API_BASE}/stops/474/static")
+        .to_return(status: 200, body: valid_body(name: 'Бандери', code: 474),
+                   headers: { 'Content-Type' => 'application/json' })
+      get '/474/schema'
+      expect(last_response.body).to include('you-are-here" cx="3237.3" cy="3846.9"')
+      expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
     end
 
     it 'shrinks a longer stop code to fit the title pin' do
       stub_stop(body: valid_body(code: 1001))
-      get "/#{STOP_CODE}/schema-1"
+      get "/#{STOP_CODE}/schema"
       expect(last_response.body).to include('style="font-size:140px">1001</text>')
     end
 
     it 'draws no pin for a name the drawing does not carry' do
       stub_stop(body: valid_body(name: 'Нема такої зупинки'))
-      get "/#{STOP_CODE}/schema-1"
+      get "/#{STOP_CODE}/schema"
       expect(last_response.body).not_to include('fil84 you-are-here"')
+    end
+  end
+
+  describe 'GET /:code/schema-1' do
+    it 'redirects to /:code/schema, keeping the query' do
+      get "/#{STOP_CODE}/schema-1?only=A46"
+      expect(last_response.status).to eq(301)
+      expect(last_response.headers['Location']).to end_with("/#{STOP_CODE}/schema?only=A46")
     end
   end
 

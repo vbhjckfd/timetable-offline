@@ -47,7 +47,7 @@ Every sticker is generated on the fly, no design tool involved. The layout is pi
 
 A bilingual 8386×7205 map of the city's electric transport, with the current stop pinned in the corner and its routes listed. Printed on the back of the sticker.
 
-`/:code/schema-1` puts a green you-are-here pin on the stop. The drawing has no text, only glyph outlines, so `tools/extract_map_labels.py` spells the labels back out, matches them to `api.lad.lviv.ua/stops.json` names and writes `data/map_labels.json` (name → marker positions); rerun it when the drawing changes. Stops whose name the drawing does not label get no pin.
+The green you-are-here pin sits on the stop's own marker. The drawing has no text, only glyph outlines, so `tools/extract_map_labels.py` spells the labels back out, matches them to `api.lad.lviv.ua/stops.json` names, reads which route lines run through each marker, and writes `data/map_labels.json` (name → marker positions and their routes) plus `data/map_stop_pins.json` (hand-placed stops, by code); rerun it when the drawing changes. A name on two lines keeps only the pin on the stop's own line; a stop whose name the drawing does not label gets no pin. The old `/:code/schema-1` redirects here.
 
 ### `?only=` / `?add=` / `?remove=` — fixing up the route list
 

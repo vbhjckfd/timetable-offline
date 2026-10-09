@@ -149,17 +149,21 @@ def apply_route_overrides(data, only: nil, add: nil, remove: nil)
   data.merge('transfers' => transfers)
 end
 
-# Where each stop name sits on the scheme-1 drawing, poster coordinates, with the tram
+# Where each stop name sits on the network drawing, poster coordinates, with the tram
 # and trolleybus numbers whose lines run through each spot; built by
 # tools/extract_map_labels.py. Names are matched the way that script keys them.
 MAP_LABELS = JSON.parse(File.read(File.join(__dir__, 'data', 'map_labels.json'))).freeze
+# Stop code -> spots, for stops the name cannot place (Бандери: one marker per direction).
+MAP_STOP_PINS = JSON.parse(File.read(File.join(__dir__, 'data', 'map_stop_pins.json'))).freeze
 
 ELECTRIC_TYPES = %w[tram trolleybus trol].freeze
 
 # Some names sit on the drawing twice, once per line (Залізняка: trolleybuses 22/30 and
 # tram 2 stop apart), so keep the spots on this stop's own lines. A stop on none of
 # them (buses only, or a line the drawing does not pin there) keeps them all.
-def map_pins_for(name, transfers)
+def map_pins_for(code, name, transfers)
+  return MAP_STOP_PINS[code.to_s] if MAP_STOP_PINS.key?(code.to_s)
+
   pins = MAP_LABELS.fetch(name.to_s.downcase.gsub(/[^[:alnum:]]/, ''), [])
   lines = Array(transfers).select { |t| ELECTRIC_TYPES.include?(t['vehicle_type']) }
                           .map { |t| t['route'].to_s.gsub(/\D/, '').to_i }
@@ -219,29 +223,29 @@ class App < Sinatra::Base
     end
   end
 
-  # "schema" is the poster the old drawing left behind, with the new map and
-  # legend dropped into it; "schema-1" is the new drawing taken whole, with only
-  # the per-stop layer on top. Both read the same data.
-  ['/:code/schema', '/:code/schema-1'].each do |route|
-    template = route.end_with?('-1') ? :scheme_1 : :scheme
+  # The 2026 network drawing taken whole, with only the per-stop layer on top.
+  get '/:code/schema' do
+    stop_code = params['code']
 
-    get route do
-      stop_code = params['code']
+    data = load_stop(stop_code)
+    data = apply_route_overrides(data, only: params['only'], add: params['add'], remove: params['remove'])
+    transfers = get_transfers(data)
 
-      data = load_stop(stop_code)
-      data = apply_route_overrides(data, only: params['only'], add: params['add'], remove: params['remove'])
-      transfers = get_transfers(data)
+    data['name_en'] = eng_name_for(stop_code, data['eng_name'])
 
-      data['name_en'] = eng_name_for(stop_code, data['eng_name'])
+    erb :scheme,
+    :locals => {
+      data: data,
+      transfers: transfers,
+      pins: map_pins_for(stop_code, data['name'], data['transfers'])
+    },
+    content_type: 'image/svg+xml'
+  end
 
-      erb template,
-      :locals => {
-        data: data,
-        transfers: transfers,
-        pins: map_pins_for(data['name'], data['transfers'])
-      },
-      content_type: 'image/svg+xml'
-    end
+  # schema-1 was where the 2026 poster lived while the old one still held /schema.
+  get '/:code/schema-1' do
+    query = request.query_string.empty? ? '' : "?#{request.query_string}"
+    redirect "/#{ERB::Util.url_encode(params['code'])}/schema#{query}", 301
   end
 
   # get '/:code.pdf' do

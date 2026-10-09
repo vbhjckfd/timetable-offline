@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Find where every stop name sits on the 2026 network drawing in views/scheme_1.erb.
+"""Find where every stop name sits on the 2026 network drawing in views/scheme.erb.
 
 The drawing has no <text>: every label is a run of glyph outlines. This script
   1. clusters the black (Ukrainian) glyph paths by outline, so one cluster is one letter,
@@ -20,8 +20,9 @@ from fontTools.pens.recordingPen import RecordingPen
 from fontTools.svgLib.path import parse_path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCHEME = os.path.join(ROOT, 'views', 'scheme_1.erb')
+SCHEME = os.path.join(ROOT, 'views', 'scheme.erb')
 OUT = os.path.join(ROOT, 'data', 'map_labels.json')
+OUT_STOPS = os.path.join(ROOT, 'data', 'map_stop_pins.json')
 
 # The drawing is placed on the poster by <g id="scheme" transform="translate(..) scale(..)">,
 # and its paths carry matrix(1,0,0,-1,0,H) on top of that.
@@ -56,6 +57,19 @@ ALIASES = {
 
 # Markers live in these groups; St. Anne's junction is drawn apart from the rest.
 MARKER_GROUPS = ('scheme-stops', 'scheme-anna')
+
+# Stops the name alone cannot place, pinned by hand: stop code -> (route it must be on, a point
+# in poster coordinates the marker sits at). Snapped to the marker, so a redrawn map fails here
+# rather than drifting.
+STOP_PINS = {
+    # Бандери, trolleybuses: one marker per direction; the triangles on the lower one point
+    # right, to the centre (474 runs to Університет), the upper one's point left (49, outbound).
+    474: (22, (3237.3, 3846.9)),
+    49: (22, (3257.4, 3547.9)),
+    # Бандери, trams 4/9: no label of their own; the 4/9 marker nearest the Бандери labels.
+    555: (4, (3350.3, 3810.9)),
+    557: (4, (3350.3, 3810.9)),
+}
 
 # Route lines, and the number on each line's end badge (trams 1-9, trolleybuses 22-38).
 # Read off scheme-numbers-bold; badge fills differ from line strokes by a shade, so match nearest.
@@ -455,6 +469,14 @@ def main():
 
     result = {k: merge_close(sorted(v, key=lambda p: p[:2])) for k, v in sorted(found.items())}
     json.dump(result, open(OUT, 'w'), ensure_ascii=False, indent=1)
+
+    by_stop = {}
+    for code, (route, (px, py)) in sorted(STOP_PINS.items()):
+        d, m = min((abs(poster(*xy)[0] - px) + abs(poster(*xy)[1] - py), m) for m, xy in enumerate(markers))
+        if d > 10 or route not in marker_routes[m]:
+            sys.exit('stop %d: no route %d marker at %s any more; redo STOP_PINS' % (code, route, (px, py)))
+        by_stop[str(code)] = [list(poster(*markers[m]))]
+    json.dump(by_stop, open(OUT_STOPS, 'w'), indent=1)
     print('%d of %d stop names found on the drawing -> %s' % (len(result), len(names), os.path.relpath(OUT, ROOT)))
 
 
