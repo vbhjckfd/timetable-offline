@@ -280,6 +280,57 @@ RSpec.describe App do
   # ── GET /:code/schema ───────────────────────────────────────────────────────
 
   describe 'GET /:code/schema' do
+    context 'with a tram line on the drawing' do
+      before do
+        stub_stop(body: valid_body(transfers: [
+          { 'route' => '6', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE },
+        ]))
+      end
+
+      it 'fades the other lines and leaves its own' do
+        get "/#{STOP_CODE}/schema"
+        expect(last_response.body).to include('#scheme-routes [stroke="#0c67b1"]')
+        expect(last_response.body).not_to include('[stroke="#933d90"]')
+      end
+    end
+
+    it 'fades nothing for a stop whose routes are not on the drawing' do
+      stub_stop(body: valid_body)
+      get "/#{STOP_CODE}/schema"
+      expect(last_response.body).not_to include('opacity: 0.2')
+    end
+
+    context 'with trams and trolleybuses at one stop' do
+      before do
+        stub_stop(body: valid_body(transfers: [
+          { 'route' => '6', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE },
+          { 'route' => 'Т22', 'vehicle_type' => 'trolleybus', 'end_stop_code' => END_STOP_CODE },
+        ]))
+      end
+
+      it 'puts the trolleybus directions below the tram ones, not on top of them' do
+        get "/#{STOP_CODE}/schema"
+        # Tram section stays at its own y; the trolleybus one (drawn at 1384.36) lands one
+        # tram row and a section gap lower, at 873 + 325.41 + 119.87.
+        expect(last_response.body).to include('translate(0, 0.0)')
+        expect(last_response.body).to include('translate(0, -66.08)')
+      end
+    end
+
+    context 'with more bus routes than the direction column has room for' do
+      before do
+        stub_stop(body: valid_body(transfers: (11..32).map do |n|
+          { 'route' => "А#{n}", 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }
+        end))
+      end
+
+      it 'scales the column down rather than run it into the legend' do
+        get "/#{STOP_CODE}/schema"
+        scale = last_response.body[/translate\(7141\.71, 813\.0\) scale\(([\d.]+)\)/, 1]
+        expect(scale.to_f).to be_between(0.5, 0.99)
+      end
+    end
+
     context 'with a valid stop' do
       before { stub_stop(body: valid_body) }
 

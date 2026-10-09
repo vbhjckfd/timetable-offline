@@ -47,6 +47,8 @@ Every sticker is generated on the fly, no design tool involved. The layout is pi
 
 A bilingual 8386×7205 poster built on the 2026 network drawing: the stop's name, code and routes in the corner, and a pin on the map where it is. Printed on the back of the sticker.
 
+The stop's own tram and trolleybus lines stay bold and every other line fades, so its routes read across the city; the direction lists on the right stack per vehicle type and shrink to fit above the legend.
+
 The green you-are-here pin sits on the stop's own marker. The drawing has no text, only glyph outlines, so `tools/extract_map_labels.py` spells the labels back out, matches them to `api.lad.lviv.ua/stops.json` names, reads which route lines run through each marker, and writes `data/map_labels.json` (name → marker positions and their routes) plus `data/map_stop_pins.json` (hand-placed stops, by code); rerun it when the drawing changes. A name on two lines keeps only the pin on the stop's own line. A tram or trolleybus stop the drawing does not label is placed on its own line's marker from its real position; any other stop within 500 m of a pinned one gets a dashed ring on that stop and a caption naming it (within 100 m it counts as the same stop); further out, no pin. The old `/:code/schema-1` redirects here.
 
 ### `?only=` / `?add=` / `?remove=` — fixing up the route list

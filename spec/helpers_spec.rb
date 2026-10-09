@@ -330,3 +330,59 @@ RSpec.describe '#apply_route_overrides' do
     end
   end
 end
+
+RSpec.describe '#directions_layout' do
+  def routes(n) = Array.new(n) { |i| "r#{i}" }
+
+  it 'stacks tram, trolleybus and bus sections one after another' do
+    layout = directions_layout(bus: routes(1), tram: routes(2), trol: routes(3))
+    expect(layout[:sections].keys).to eq(%i[tram trol bus])
+    expect(layout[:sections][:tram]).to eq(873.0)
+    expect(layout[:sections][:trol]).to be_within(0.01).of(873 + 325.41 + 2 * 119.87)
+    expect(layout[:sections][:bus]).to be_within(0.01).of(layout[:sections][:trol] + 325.41 + 3 * 119.87)
+  end
+
+  it 'starts the first section at the top whatever its type' do
+    expect(directions_layout(bus: routes(3))[:sections]).to eq(bus: 873.0)
+  end
+
+  it 'keeps a column that fits at full size' do
+    expect(directions_layout(bus: routes(14), tram: routes(2))[:scale]).to eq(1.0)
+  end
+
+  it 'scales a column that would run into the legend so its last row ends above it' do
+    layout = directions_layout(bus: routes(22), tram: routes(2))
+    expect(layout[:scale]).to be < 1.0
+    bottom = layout[:sections][:bus] + DIRECTIONS_SECTION_TAIL + 22 * DIRECTIONS_ROW
+    expect(DIRECTIONS_TOP + (bottom - DIRECTIONS_TOP) * layout[:scale]).to be_within(0.01).of(DIRECTIONS_BOTTOM)
+  end
+end
+
+RSpec.describe '#faded_route_colours' do
+  def stop(*routes) = routes.map { |r, type| { 'route' => r, 'vehicle_type' => type } }
+
+  it 'reads every tram and trolleybus line on the drawing' do
+    expect(ROUTE_INK.values.uniq.sort).to eq([1, 2, 3, 4, 6, 7, 8, 9, 22, 23, 24, 25, 27, 29, 30, 31, 32, 33, 38])
+  end
+
+  it 'fades every line but the stop\'s own' do
+    faded = faded_route_colours(stop(['6', 'tram'], ['Т23', 'trolleybus'], ['А20', 'bus']))
+    expect(faded.map { |c| ROUTE_INK[c] }).not_to include(6, 23)
+    expect(faded).to include('#0c67b1', '#0f5c1c')
+    expect(faded).not_to include('#bd805c', '#ba7f5e')
+  end
+
+  it 'fades nothing at a stop with no line on the drawing' do
+    expect(faded_route_colours(stop(['А20', 'bus'], ['14', 'tram']))).to be_empty
+  end
+
+  it 'fades the digits of an end badge with it' do
+    css = faded_routes_css(stop(['6', 'tram']))
+    expect(css).to include('#scheme-numbers-bold [fill="#e8e348"] + [fill="#1a1a18"] + [fill="#1a1a18"]')
+    expect(css).not_to include('"#933d90"')
+  end
+
+  it 'gives no CSS when nothing fades' do
+    expect(faded_routes_css(stop(['А20', 'bus']))).to be_nil
+  end
+end
