@@ -237,7 +237,7 @@ ENG_NAMES = [
     },
     {
       "code": 60,
-      "eng_name": "St. Anna Church"
+      "eng_name": "Zakhysnykiv Ukrainy"
     },
     {
       "code": 61,
