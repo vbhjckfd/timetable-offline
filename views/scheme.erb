@@ -2551,6 +2551,13 @@ viewBox="0 0 8386 7204.87">
 </clipPath>
 </defs>
  <rect class="fil2 str12" width="8386" height="7204.87"/>
+<%# Fade the lines and end badges of routes that do not stop here, so this stop's own
+    tram and trolleybus lines read through the city. %>
+<% if (faded_css = faded_routes_css(data['transfers'])) %>
+<style>
+<%= faded_css %>
+</style>
+<% end %>
 <g id="scheme" transform="translate(623.71 178.2) scale(3.065)">
 <g>
 <g id="scheme-rivers">

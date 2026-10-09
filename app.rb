@@ -160,6 +160,60 @@ MAP_STOP_PINS = JSON.parse(File.read(File.join(__dir__, 'data', 'map_stop_pins.j
 
 ELECTRIC_TYPES = %w[tram trolleybus trol].freeze
 
+# The drawing's tram (1-9) and trolleybus (22-38) lines, keyed by the colour each is drawn
+# in, as tools/extract_map_labels.py reads them. A line's stroke and its end badge's fill
+# differ by a shade, so every colour the route groups use is matched to the nearest here.
+ROUTE_COLOURS = {
+  '#e41e0e' => 1, '#915134' => 2, '#4baf50' => 3, '#009bd6' => 4, '#933d90' => 6, '#0c67b1' => 7, '#929292' => 8,
+  '#0f5c1c' => 9, '#359a7a' => 22, '#ba7f5e' => 23, '#e8e348' => 24, '#e94d09' => 25, '#afca06' => 27,
+  '#25328a' => 29, '#f086a9' => 30, '#078e2e' => 31, '#e50063' => 32, '#6f7e28' => 33, '#9c0b01' => 38,
+}.freeze
+# The drawing's groups that hold route lines and their end badges.
+ROUTE_GROUPS = %w[scheme-tmp-29 scheme-routes scheme-tmp-30 scheme-anna scheme-numbers-bold].freeze
+
+def route_of_colour(hex)
+  rgb = ->(h) { [h[1, 2], h[3, 2], h[5, 2]].map { |c| c.to_i(16) } }
+  off = ->(c) { rgb.(c).zip(rgb.(hex)).sum { |a, b| (a - b)**2 } }
+  best = ROUTE_COLOURS.keys.min_by(&off)
+  ROUTE_COLOURS[best] if off.(best) < 300
+end
+
+# Every colour drawn in the route groups -> the route it belongs to.
+ROUTE_INK = begin
+  svg = File.read(File.join(__dir__, 'views', 'scheme.erb'), encoding: 'utf-8')
+  ROUTE_GROUPS.flat_map do |group|
+    body = svg[/<g id="#{group}">\n(.*?)\n<\/g>/m, 1].to_s
+    body.scan(/(?:stroke|fill)="(#\h{6})"/).flatten
+  end.uniq.to_h { |hex| [hex, route_of_colour(hex)] }.compact.freeze
+end
+
+# The colours of the drawing's lines that do not serve this stop, to fade so its own stand
+# out; none for a stop with no tram or trolleybus line on the drawing (buses are not drawn).
+def faded_route_colours(transfers)
+  ours = Array(transfers).select { |t| ELECTRIC_TYPES.include?(t['vehicle_type']) }
+                         .map { |t| t['route'].to_s.gsub(/\D/, '').to_i }
+  return [] if (ROUTE_INK.values & ours).empty?
+
+  ROUTE_INK.reject { |_, route| ours.include?(route) }.keys.sort
+end
+
+# CSS fading those colours. An end badge is its fill followed by the path of each digit,
+# white or (on the light badges) black, so the digits go with it.
+def faded_routes_css(transfers)
+  faded = faded_route_colours(transfers)
+  return nil if faded.empty?
+
+  selectors = faded.flat_map do |c|
+    lines = ROUTE_GROUPS.map { |g| %(##{g} [stroke="#{c}"], ##{g} [fill="#{c}"]) }
+    digits = %w[#ffffff #1a1a18].flat_map do |d|
+      badge = %(#scheme-numbers-bold [fill="#{c}"])
+      [%(#{badge} + [fill="#{d}"]), %(#{badge} + [fill="#{d}"] + [fill="#{d}"])]
+    end
+    lines + digits
+  end
+  "#{selectors.join(",\n")} { opacity: 0.2 }"
+end
+
 # Some names sit on the drawing twice, once per line (Залізняка: trolleybuses 22/30 and
 # tram 2 stop apart), so keep the spots on this stop's own lines. A stop on none of
 # them (buses only, or a line the drawing does not pin there) keeps them all.

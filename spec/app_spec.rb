@@ -280,6 +280,26 @@ RSpec.describe App do
   # ── GET /:code/schema ───────────────────────────────────────────────────────
 
   describe 'GET /:code/schema' do
+    context 'with a tram line on the drawing' do
+      before do
+        stub_stop(body: valid_body(transfers: [
+          { 'route' => '6', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE },
+        ]))
+      end
+
+      it 'fades the other lines and leaves its own' do
+        get "/#{STOP_CODE}/schema"
+        expect(last_response.body).to include('#scheme-routes [stroke="#0c67b1"]')
+        expect(last_response.body).not_to include('[stroke="#933d90"]')
+      end
+    end
+
+    it 'fades nothing for a stop whose routes are not on the drawing' do
+      stub_stop(body: valid_body)
+      get "/#{STOP_CODE}/schema"
+      expect(last_response.body).not_to include('opacity: 0.2')
+    end
+
     context 'with trams and trolleybuses at one stop' do
       before do
         stub_stop(body: valid_body(transfers: [
