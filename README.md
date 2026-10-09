@@ -42,10 +42,10 @@ Every sticker is generated on the fly, no design tool involved. The layout is pi
 ### `GET /:code/schema` — the whole network, with you-are-here
 
 <p align="center">
-  <img src="docs/schema-80.png" alt="Full Lviv electric transport scheme with stop 80 highlighted" width="900">
+  <img src="docs/schema-80.png" alt="The 2026 Lviv network drawing with stop 80 pinned on the map" width="900">
 </p>
 
-A bilingual 8386×7205 map of the city's electric transport, with the current stop pinned in the corner and its routes listed. Printed on the back of the sticker.
+A bilingual 8386×7205 poster built on the 2026 network drawing: the stop's name, code and routes in the corner, and a pin on the map where it is. Printed on the back of the sticker.
 
 The green you-are-here pin sits on the stop's own marker. The drawing has no text, only glyph outlines, so `tools/extract_map_labels.py` spells the labels back out, matches them to `api.lad.lviv.ua/stops.json` names, reads which route lines run through each marker, and writes `data/map_labels.json` (name → marker positions and their routes) plus `data/map_stop_pins.json` (hand-placed stops, by code); rerun it when the drawing changes. A name on two lines keeps only the pin on the stop's own line; a stop whose name the drawing does not label gets no pin. The old `/:code/schema-1` redirects here.
 
@@ -151,5 +151,5 @@ Route names arrive in Cyrillic and have to map onto icon filenames. `А03` → `
 
 Two things in this repo are **not** covered by that, because they were never mine to relicense:
 
-- 🗺️ The network map in `views/scheme.erb` is © Єгор Каліберда, 2020 ([kaliberda.com](https://www.kaliberda.com)), as credited in the artwork itself.
+- 🗺️ The network map in `views/scheme.erb` is © Єгор Каліберда, 2026 ([kaliberda.com](https://www.kaliberda.com)), as credited in the artwork itself.
 - 🔠 The embedded Myriad Pro fonts in `public/fonts/` are Adobe's, under their own license.
