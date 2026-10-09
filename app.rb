@@ -153,7 +153,9 @@ end
 # and trolleybus numbers whose lines run through each spot; built by
 # tools/extract_map_labels.py. Names are matched the way that script keys them.
 MAP_LABELS = JSON.parse(File.read(File.join(__dir__, 'data', 'map_labels.json'))).freeze
-# Stop code -> spots, for stops the name cannot place (Бандери: one marker per direction).
+# Stop code -> {at: spots, walk: nil | the pinned stop it points at}, for stops the name
+# cannot place: Бандери (one marker per direction), tram/trolleybus stops the drawing does
+# not label, and stops off the drawing within a short walk of one on it.
 MAP_STOP_PINS = JSON.parse(File.read(File.join(__dir__, 'data', 'map_stop_pins.json'))).freeze
 
 ELECTRIC_TYPES = %w[tram trolleybus trol].freeze
@@ -161,14 +163,22 @@ ELECTRIC_TYPES = %w[tram trolleybus trol].freeze
 # Some names sit on the drawing twice, once per line (Залізняка: trolleybuses 22/30 and
 # tram 2 stop apart), so keep the spots on this stop's own lines. A stop on none of
 # them (buses only, or a line the drawing does not pin there) keeps them all.
-def map_pins_for(code, name, transfers)
-  return MAP_STOP_PINS[code.to_s] if MAP_STOP_PINS.key?(code.to_s)
-
+def map_pins_for(name, transfers)
   pins = MAP_LABELS.fetch(name.to_s.downcase.gsub(/[^[:alnum:]]/, ''), [])
   lines = Array(transfers).select { |t| ELECTRIC_TYPES.include?(t['vehicle_type']) }
                           .map { |t| t['route'].to_s.gsub(/\D/, '').to_i }
   ours = pins.select { |_, _, served| (Array(served) & lines).any? }
   (ours.empty? ? pins : ours).map { |x, y, _| [x, y] }
+end
+
+# What to draw for a stop: the spots to pin, and for a stop the drawing does not carry, the
+# nearby stop those spots belong to (name, English name, metres away as the crow flies).
+def map_spot_for(code, name, transfers)
+  entry = MAP_STOP_PINS[code.to_s]
+  return { pins: map_pins_for(name, transfers), walk: nil } unless entry
+
+  walk = entry['walk'] && entry['walk'].merge('name_en' => eng_name_for(entry['walk']['code'], entry['walk']['name_en']))
+  { pins: entry['at'], walk: walk }
 end
 
 def route_tokens(value)
@@ -237,7 +247,7 @@ class App < Sinatra::Base
     :locals => {
       data: data,
       transfers: transfers,
-      pins: map_pins_for(stop_code, data['name'], data['transfers'])
+      spot: map_spot_for(stop_code, data['name'], data['transfers'])
     },
     content_type: 'image/svg+xml'
   end

@@ -14,7 +14,7 @@ Redo it whenever the drawing changes (the cluster ids will change too; run with
 
     python3 tools/extract_map_labels.py [--stops stops.json] [--sheet sheet.svg]
 """
-import argparse, collections, json, os, re, sys, urllib.request
+import argparse, collections, json, math, os, re, sys, urllib.request
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.recordingPen import RecordingPen
 from fontTools.svgLib.path import parse_path
@@ -53,6 +53,23 @@ ALIASES = {
     'бкотика': ['котика', 'богданакотика'],
     'сихівськарайадміністрація': ['сихівськара'],
     'шевченківськарайадміністрація': ['шевченківськара'],
+    'клевицького': ['левицького'],
+}
+
+# A tram/trolleybus stop the drawing does not label is placed from its real position: a local fit
+# from the pinned stops around it says where on the drawing it should be, and it takes the nearest
+# free marker on its own line. Tested on stops already pinned, that picks the right marker 91% of
+# the time, about 74 px off on the median; further than this from any such marker, it is not trusted.
+LOCATE_WITHIN = 150  # poster px
+
+# A stop with no pin of its own points at the nearest pinned stop this close, as the crow flies;
+# closer than SAME_PLACE it is the same stop under another code, and gets the plain pin.
+WALK_WITHIN = 500  # metres
+SAME_PLACE = 100  # metres
+
+# Where the nearest stop as the crow flies is not the one to walk to: name -> name to point at.
+WALK_TO = {
+    'словацького': 'головнапошта',  # not Університет, which is about as close
 }
 
 # Markers live in these groups; St. Anne's junction is drawn apart from the rest.
@@ -369,6 +386,85 @@ def electric_routes(stops):
     return out
 
 
+def lines_of(stop):
+    return {int(r[1:]) for r in stop['routes'] if r[:1] in 'ТT' and r[1:].isdigit()}
+
+
+def metres(stop):
+    """Stop position in metres east / north of the city centre."""
+    lat, lon = stop['location']
+    return (lon - 24.03) * 111320 * math.cos(math.radians(49.84)), (lat - 49.84) * 111320
+
+
+def pins_of(stop, by_name, by_stop):
+    """The spots the app pins this stop on, by the same rules as map_pins_for in app.rb."""
+    if str(stop['code']) in by_stop:
+        return [] if 'walk' in by_stop[str(stop['code'])] else by_stop[str(stop['code'])]['at']
+    pins = by_name.get(key(stop['name']), [])
+    ours = [p for p in pins if set(p[2]) & lines_of(stop)]
+    return [p[:2] for p in ours or pins]
+
+
+def fit_at(stop, pool, k=6):
+    """Where on the poster `stop` would be, from an affine fit to the k pinned stops nearest it."""
+    gx, gy = metres(stop)
+    near = sorted(pool, key=lambda sp: math.dist(metres(sp[0]), (gx, gy)))[:k]
+    out = []
+    for axis in (0, 1):  # weighted least squares, solved by hand: [x, y, 1] . c = poster axis
+        ata = [[0.0] * 3 for _ in range(3)]
+        atb = [0.0] * 3
+        for s, (pin,) in near:
+            row = [*metres(s), 1.0]
+            w = 1 / (20 + math.dist(row[:2], (gx, gy)))
+            for i in range(3):
+                atb[i] += w * row[i] * pin[axis]
+                for j in range(3):
+                    ata[i][j] += w * row[i] * row[j]
+        for i in range(3):  # Gauss-Jordan
+            piv = max(range(i, 3), key=lambda r: abs(ata[r][i]))
+            ata[i], ata[piv], atb[i], atb[piv] = ata[piv], ata[i], atb[piv], atb[i]
+            for r in range(3):
+                if r != i:
+                    f = ata[r][i] / ata[i][i]
+                    ata[r] = [a - f * b for a, b in zip(ata[r], ata[i])]
+                    atb[r] -= f * atb[i]
+        c = [atb[i] / ata[i][i] for i in range(3)]
+        out.append(c[0] * gx + c[1] * gy + c[2])
+    return out
+
+
+def stop_pins(stops, by_name, by_stop, spots, spot_routes):
+    """Fill by_stop for the stops their name does not place: a tram/trolleybus stop on its own
+    line's marker when the fit is close enough, anything else pointed at the nearest pinned stop."""
+    placed = [(s, pins_of(s, by_name, by_stop)) for s in stops]
+    known = [(s, p) for s, p in placed if lines_of(s) and len(p) == 1]
+    claimed = {min(range(len(spots)), key=lambda i: math.dist(spots[i], p[0])) for _, p in known}
+    for s, p in placed:
+        if p or not lines_of(s):
+            continue
+        x, y = fit_at(s, known)
+        free = [i for i in range(len(spots)) if i not in claimed and spot_routes[i] & lines_of(s)]
+        d, i = min(((math.dist((x, y), spots[i]), i) for i in free), default=(math.inf, None))
+        if d <= LOCATE_WITHIN:
+            by_stop[str(s['code'])] = {'at': [list(spots[i])]}
+        else:
+            print('stop %d %s: no marker of its line where it should be' % (s['code'], s['name']), file=sys.stderr)
+
+    pinned = [(s, pins_of(s, by_name, by_stop)) for s in stops]
+    pinned = [(s, p) for s, p in pinned if p]
+    for s in stops:
+        if pins_of(s, by_name, by_stop):
+            continue
+        pool = [(t, p) for t, p in pinned if key(t['name']) == WALK_TO.get(key(s['name']), key(t['name']))]
+        d, (to, at) = min(((math.dist(metres(s), metres(t)), (t, p)) for t, p in pool), key=lambda dp: dp[0])
+        if d <= SAME_PLACE:
+            by_stop[str(s['code'])] = {'at': at}
+        elif d <= WALK_WITHIN:
+            by_stop[str(s['code'])] = {'at': at, 'walk': {'code': to['code'], 'name': to['name'],
+                                                          'name_en': to.get('eng_name') or '',
+                                                          'metres': int(round(d / 10) * 10)}}
+
+
 def merge_close(points, within=15):
     """Interchange markers are several squares in a row; one pin is enough for those."""
     out = []
@@ -475,8 +571,11 @@ def main():
         d, m = min((abs(poster(*xy)[0] - px) + abs(poster(*xy)[1] - py), m) for m, xy in enumerate(markers))
         if d > 10 or route not in marker_routes[m]:
             sys.exit('stop %d: no route %d marker at %s any more; redo STOP_PINS' % (code, route, (px, py)))
-        by_stop[str(code)] = [list(poster(*markers[m]))]
-    json.dump(by_stop, open(OUT_STOPS, 'w'), indent=1)
+        by_stop[str(code)] = {'at': [list(poster(*markers[m]))]}
+    stop_pins(stops, result, by_stop, [poster(*xy) for xy in markers], marker_routes)
+    json.dump(by_stop, open(OUT_STOPS, 'w'), ensure_ascii=False, indent=1)
+    print('%d stops placed by code, %d of them pointing at a stop nearby -> %s'
+          % (len(by_stop), sum('walk' in v for v in by_stop.values()), os.path.relpath(OUT_STOPS, ROOT)))
     print('%d of %d stop names found on the drawing -> %s' % (len(result), len(names), os.path.relpath(OUT, ROOT)))
 
 

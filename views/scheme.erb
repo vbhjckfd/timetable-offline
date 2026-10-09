@@ -2783,9 +2783,10 @@ viewBox="0 0 8386 7204.87">
 </g>
 <%# The halo of each you-are-here pin sits under the drawing's labels, stops and icons
     (accessibility marks included), and is a ring over a faint wash rather than a solid disc,
-    so whatever it surrounds stays readable; poster coordinates -> drawing's. %>
-<% pins.each do |x, y| %>
-<circle cx="<%= ((x - 623.71) / 3.065).round(2) %>" cy="<%= ((y - 178.2) / 3.065).round(2) %>" r="27.9" fill="#047C35" fill-opacity="0.15" stroke="#047C35" stroke-opacity="0.85" stroke-width="3"/>
+    so whatever it surrounds stays readable; poster coordinates -> drawing's. A stop off the
+    drawing gets a dashed ring, no wash, on the nearby stop it points at. %>
+<% spot[:pins].each do |x, y| %>
+<circle cx="<%= ((x - 623.71) / 3.065).round(2) %>" cy="<%= ((y - 178.2) / 3.065).round(2) %>" r="27.9" stroke="#047C35" stroke-opacity="0.85" stroke-width="3" <%= spot[:walk] ? 'fill="none" stroke-dasharray="5 3.5"' : 'fill="#047C35" fill-opacity="0.15"' %>/>
 <% end %>
 <g id="scheme-text">
 <path transform="matrix(1,0,0,-1,0,2267.7166)" d="M594.9958 1612.9716H593.3038C593.4719 1613.2595 593.6397 1613.6254 593.8078 1614.0696 593.8917 1614.3095 594.0088 1614.6635 594.1587 1615.1315 594.3087 1615.5995 594.438 1615.9805 594.546 1616.2744 594.654 1616.5684 594.8039 1616.8955 594.9958 1617.2555 595.1877 1617.6155 595.3978 1617.9094 595.626 1618.1376 595.914 1618.4257 596.2558 1618.6354 596.6518 1618.7675V1618.8035C595.8717 1618.9356 595.23 1619.2655 594.726 1619.7936 594.222 1620.3214 593.97 1620.9876 593.97 1621.7915 593.97 1622.8355 594.3419 1623.6516 595.086 1624.2395 595.8539 1624.8756 597.0118 1625.1936 598.5598 1625.1936 599.5678 1625.1936 600.5339 1625.1094 601.458 1624.9417V1612.9716H599.8918V1618.2276H598.722C597.966 1618.2276 597.39 1618.0296 596.994 1617.6336 596.742 1617.3816 596.5228 1617.0454 596.3369 1616.6256 596.1509 1616.2055 595.9647 1615.6834 595.7787 1615.0595 595.5928 1614.4356 595.4638 1614.0336 595.3918 1613.8536 595.2478 1613.5175 595.1157 1613.2235 594.9958 1612.9716ZM599.8918 1619.4515V1623.8256C599.5318 1623.9214 599.0338 1623.9696 598.398 1623.9696 597.5578 1623.9696 596.8738 1623.7896 596.346 1623.4296 595.8179 1623.0696 595.554 1622.4996 595.554 1621.7195 595.554 1621.0114 595.8329 1620.4505 596.3907 1620.0366 596.9489 1619.6224 597.6717 1619.4155 598.5598 1619.4155 599.2438 1619.4155 599.6877 1619.4274 599.8918 1619.4515" fill="#1a1a18"/>
@@ -10664,8 +10665,23 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
     stop_code_size = { 1 => 219, 2 => 219, 3 => 180, 4 => 140 }.fetch(stop_code.length, 112)
   %>
   <text id="stop-id" x="451.7" y="<%= (379.73 + 0.337 * stop_code_size).round(2) %>" text-anchor="middle" class="fil82 fnt28" style="font-size:<%= stop_code_size %>px"><%= stop_code %></text>
-  <% pins.each do |x, y| %>
+  <% unless spot[:walk] %>
+  <% spot[:pins].each do |x, y| %>
   <circle class="fil84 you-are-here" cx="<%= x %>" cy="<%= y %>" r="14"/>
+  <% end %>
+  <% end %>
+  <% if (walk = spot[:walk]) %>
+  <%
+    # Under the stop name: where the dashed ring is, and how far. Long names shrink to stay
+    # clear of the drawing, which starts about 2100 units to the right.
+    walk_uk = "Найближча зупинка на схемі: «#{walk['name']}», ≈#{walk['metres']} м"
+    walk_en = "Nearest stop on the map: #{walk['name_en'].empty? ? walk['name'] : walk['name_en']}, ≈#{walk['metres']} m"
+    walk_size = [96, (4200.0 / [walk_uk.length, walk_en.length].max).floor].min
+  %>
+  <g id="walk-to" class="fil79" style="font-family:'Myriad Pro';font-weight:normal">
+   <text x="832.74" y="<%= 733.98 + 60 + walk_size %>" style="font-size:<%= walk_size %>px"><%= ERB::Util.h(walk_uk) %></text>
+   <text x="832.74" y="<%= 733.98 + 80 + 2 * walk_size %>" style="font-size:<%= walk_size %>px"><%= ERB::Util.h(walk_en) %></text>
+  </g>
   <% end %>
  </g>
  <g id="Legends">

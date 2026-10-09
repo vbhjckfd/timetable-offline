@@ -415,6 +415,18 @@ RSpec.describe App do
       expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
     end
 
+    it 'points a stop off the drawing at the pinned stop nearby' do
+      transfers = [{ 'route' => 'А01', 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }]
+      stub_request(:get, "#{API_BASE}/stops/8/static")
+        .to_return(status: 200, body: valid_body(name: 'Словацького', code: 8, transfers: transfers),
+                   headers: { 'Content-Type' => 'application/json' })
+      get '/8/schema'
+      expect(last_response.body).to include('stroke-dasharray')
+      expect(last_response.body).to include('Найближча зупинка на схемі: «Головна пошта», ≈190 м')
+      expect(last_response.body).to include('Nearest stop on the map: Main Post Office, ≈190 m')
+      expect(last_response.body).not_to include('fil84 you-are-here"')
+    end
+
     it 'shrinks a longer stop code to fit the title pin' do
       stub_stop(body: valid_body(code: 1001))
       get "/#{STOP_CODE}/schema"
