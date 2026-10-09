@@ -29,7 +29,7 @@ ENG_NAMES = [
     },
     {
       "code": 8,
-      "eng_name": "Stryiskyi market"
+      "eng_name": "Slovatskoho"
     },
     {
       "code": 9,
