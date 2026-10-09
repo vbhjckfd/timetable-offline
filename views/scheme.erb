@@ -10671,10 +10671,21 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
   </g>
   </g>
 
- <%# QR to the stop's page on lad.lviv.ua, in the free corner right of the drawing's credit line.
-     The code's module count grows with the stop code, so scale it to a fixed 560-unit square. %>
- <% qr_side = qrcode[/width="(\d+)"/, 1].to_f %>
- <g id="stop-qr" transform="translate(7700, 6520) scale(<%= (560 / qr_side).round(4) %>)">
+ <%# QR to the stop's page on lad.lviv.ua, centred in the top-left whitespace. That space runs
+     from the route icon columns (whose right edge depends on which types the stop has, after
+     the no-bus shift) to the drawing's first rail line at x 2208, and from the stop name
+     (or the walk note under it) down to the Суботівська label at y 2270. The code's module
+     count grows with the stop code, so it is scaled to a fixed 960-unit square. %>
+ <%
+   qr_size = 960
+   icon_rights = { bus: 450, tram: 787, trol: 744, night: 1234 }.filter_map { |type, right| right if transfers[type] }
+   qr_left = icon_rights.empty? ? 0.0 : icon_rights.max - no_buses_shift
+   qr_top = spot[:walk] ? 1030 : 780
+   qr_x = (qr_left + 2208 - qr_size) / 2
+   qr_y = (qr_top + 2270 - qr_size) / 2
+   qr_side = qrcode[/width="(\d+)"/, 1].to_f
+ %>
+ <g id="stop-qr" transform="translate(<%= qr_x.round(2) %>, <%= qr_y.round(2) %>) scale(<%= (qr_size / qr_side).round(4) %>)">
   <%= qrcode %>
  </g>
  </g>
