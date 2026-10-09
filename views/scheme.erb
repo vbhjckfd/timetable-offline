@@ -10534,8 +10534,6 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
     {type: :night, x: 1376 - 92},
   ]
 
-  let_vehicles = transfers[:trol] || transfers[:tram]
-  count_of_let_vehicles = let_vehicles.nil? ? 0 : (let_vehicles.length + 1)
   no_buses_shift = transfers[:bus].nil? ? (585 - 266) : 0
 
   %>
@@ -10590,9 +10588,13 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
   </g>
 
   <!-- The drawing's own route column sits 642 units left of the old poster's, and higher. -->
+  <%# Each section's template is drawn at its own header y (tram 873, trolleybus 1384.36,
+      bus 1775.85) and shifted to where directions_layout stacks it. %>
+  <% directions = directions_layout(transfers) %>
   <g transform="translate(-642.2, -270)">
+  <g transform="translate(7141.71, <%= DIRECTIONS_TOP %>) scale(<%= directions[:scale].round(4) %>) translate(-7141.71, <%= -DIRECTIONS_TOP %>)">
   <% if transfers[:tram] %>
-  <g transform="translate(0, 0)">
+  <g transform="translate(0, <%= (directions[:sections][:tram] - 873).round(2) %>)">
     <path class="fil49" d="M7184.86 904.58l-18.42 0c-0.9,0.02 -1.62,0.77 -1.6,1.68 0.02,0.87 0.73,1.58 1.6,1.6l18.42 0c0.91,0.02 1.66,-0.7 1.68,-1.6 0.02,-0.91 -0.7,-1.66 -1.6,-1.68 -0.03,0 -0.05,0 -0.08,0z"/>
     <path class="fil49" d="M7161.99 853.08l27.29 0 5.66 18.31 -2.1 10.62 -34.47 0 -2 -10.63 5.62 -18.3zm38.79 18.31l0 -0.01c-0.01,-0.04 -6.21,-21.4 -6.22,-21.45 -0.28,-1.33 -1.53,-2.84 -3.19,-2.84 -1.56,-0.06 -12.21,0 -12.21,0l7.45 -7.56c0.91,-0.91 0.91,-2.38 0,-3.29l-5.3 -5.29 -3.28 -3.04c-0.64,-0.62 -1.49,-0.96 -2.38,-0.97 -0.88,0.01 -1.73,0.35 -2.39,0.95l-3.26 3.06 -5.3 5.29c-0.91,0.91 -0.91,2.38 0,3.29l7.46 7.56c0,0 -10.95,-0.04 -12.17,0 -1.58,0 -3.26,1.92 -3.55,3.65 -0.02,0.1 -5.92,20.64 -5.92,20.64l3.76 20.96c0.46,2.64 2.07,4.63 4.62,4.63l33.5 0c2.56,0 4.13,-1.5 4.63,-4.63l3.75 -20.95zm-32.07 -33.5l6.95 -6.94 6.94 6.94 -6.94 6.94 -6.95 -6.94zm19.27 53.92c-1.8,-0.01 -3.26,-1.47 -3.26,-3.27 0,-1.81 1.47,-3.27 3.27,-3.26 1.8,0 3.26,1.46 3.26,3.26 0,1.8 -1.46,3.26 -3.26,3.26 0,0 0,0 0,0l-0.01 0.01zm-24.66 0c-1.81,0 -3.27,-1.46 -3.27,-3.27 0,-1.8 1.46,-3.26 3.26,-3.26 1.8,-0.01 3.27,1.45 3.27,3.26 0,0 0,0 0,0 0,1.8 -1.46,3.26 -3.26,3.26l0 0.01z"/>
     <path class="fil49" d="M7159.71 900.08l-7.19 7.21c-1.03,1.04 -1.03,2.72 0,3.75 1.04,1.04 2.72,1.04 3.76,0l10.97 -10.96 -7.54 0z"/>
@@ -10615,7 +10617,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
   <% end %>
 
   <% if transfers[:trol] %>
-  <g transform="translate(0, <%= 873 - 1384 %>)">
+  <g transform="translate(0, <%= (directions[:sections][:trol] - 1384.36).round(2) %>)">
     <g>
       <text x="7229.7" y="1384.36"  class="fil31 fnt34">Напрямок тролейбусних маршрутів</text>
       <text x="7229.7" y="1430.84"  class="fil31 fnt35">Trolleybus routes direction</text>
@@ -10642,7 +10644,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
 
   <% if transfers[:bus] %>
 
-  <g transform="translate(0, <%= 1384.36 - 1178.82 + 873 + 119.87 * count_of_let_vehicles - 1775 %>)">
+  <g transform="translate(0, <%= (directions[:sections][:bus] - 1775.85).round(2) %>)">
     <text x="7229.7" y="1775.85"  class="fil31 fnt34">Напрямок автобусних маршрутів</text>
     <text x="7229.7" y="1822.32"  class="fil31 fnt35">Bus routes direction</text>
     <path class="fil30" d="M7192.84 1741.02l-40.45 0c-2.53,0 -4.59,2.05 -4.59,4.58l0 40.45c0,2.54 2.06,4.6 4.59,4.6l1.41 0 0 1.76c0,2.32 1.89,4.2 4.21,4.2l0.49 0c2.32,0 4.2,-1.88 4.2,-4.2l0 -1.76 20.23 0 0 1.76c0,2.32 1.88,4.2 4.21,4.2l0.49 0c2.32,0 4.2,-1.88 4.2,-4.2l0 -1.76 1.01 0c2.53,0 4.59,-2.06 4.59,-4.6l0 -40.45c0,-2.53 -2.06,-4.58 -4.59,-4.58zm-36.07 44.5c-1.79,0 -3.24,-1.45 -3.24,-3.24 0,-1.78 1.45,-3.23 3.24,-3.23 1.79,0 3.24,1.45 3.24,3.23 0,1.79 -1.45,3.24 -3.24,3.24zm31.62 0c-1.79,0 -3.23,-1.45 -3.23,-3.24 0,-1.78 1.44,-3.23 3.23,-3.23 1.79,0 3.24,1.45 3.24,3.23 0,1.79 -1.45,3.24 -3.24,3.24zm3.24 -9.71l-38.03 0 0 -29.13 38.03 0 0 29.13z"/>
@@ -10659,6 +10661,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
     <% end %>
   </g>
   <% end %>
+  </g>
   </g>
  </g>
 </svg>

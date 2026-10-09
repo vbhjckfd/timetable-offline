@@ -181,6 +181,34 @@ def map_spot_for(code, name, transfers)
   { pins: entry['at'], walk: walk }
 end
 
+# The schema's route-direction column, top right: one section per vehicle type, stacked
+# tram, trolleybus, bus, each a header and one row per route. Coordinates are the
+# column's own (before its translate(-642.2, -270)). The drawing's legend starts below
+# DIRECTIONS_BOTTOM, so a column that would run into it is scaled down to fit.
+DIRECTIONS_TOP = 813.0
+DIRECTIONS_BOTTOM = 3500.0
+DIRECTIONS_ROW = 119.87
+# Header baseline to the next section's header, less one row per route above it.
+DIRECTIONS_SECTION_GAP = 325.41
+# Header baseline to the bottom of the last row's English line, less one row per route.
+DIRECTIONS_SECTION_TAIL = 78.73
+
+def directions_layout(transfers)
+  y = 873.0
+  sections = %i[tram trol bus].filter_map do |type|
+    rows = Array(transfers[type]).length
+    next if rows.zero?
+
+    section = { type: type, header_y: y, bottom: y + DIRECTIONS_SECTION_TAIL + DIRECTIONS_ROW * rows }
+    y += DIRECTIONS_SECTION_GAP + DIRECTIONS_ROW * rows
+    section
+  end
+
+  bottom = sections.empty? ? DIRECTIONS_TOP : sections.last[:bottom]
+  scale = [1.0, (DIRECTIONS_BOTTOM - DIRECTIONS_TOP) / (bottom - DIRECTIONS_TOP)].min
+  { sections: sections.to_h { |s| [s[:type], s[:header_y]] }, scale: scale }
+end
+
 def route_tokens(value)
   value.to_s.split(',').map(&:strip).reject(&:empty?)
 end

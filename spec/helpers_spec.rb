@@ -330,3 +330,30 @@ RSpec.describe '#apply_route_overrides' do
     end
   end
 end
+
+RSpec.describe '#directions_layout' do
+  def routes(n) = Array.new(n) { |i| "r#{i}" }
+
+  it 'stacks tram, trolleybus and bus sections one after another' do
+    layout = directions_layout(bus: routes(1), tram: routes(2), trol: routes(3))
+    expect(layout[:sections].keys).to eq(%i[tram trol bus])
+    expect(layout[:sections][:tram]).to eq(873.0)
+    expect(layout[:sections][:trol]).to be_within(0.01).of(873 + 325.41 + 2 * 119.87)
+    expect(layout[:sections][:bus]).to be_within(0.01).of(layout[:sections][:trol] + 325.41 + 3 * 119.87)
+  end
+
+  it 'starts the first section at the top whatever its type' do
+    expect(directions_layout(bus: routes(3))[:sections]).to eq(bus: 873.0)
+  end
+
+  it 'keeps a column that fits at full size' do
+    expect(directions_layout(bus: routes(14), tram: routes(2))[:scale]).to eq(1.0)
+  end
+
+  it 'scales a column that would run into the legend so its last row ends above it' do
+    layout = directions_layout(bus: routes(22), tram: routes(2))
+    expect(layout[:scale]).to be < 1.0
+    bottom = layout[:sections][:bus] + DIRECTIONS_SECTION_TAIL + 22 * DIRECTIONS_ROW
+    expect(DIRECTIONS_TOP + (bottom - DIRECTIONS_TOP) * layout[:scale]).to be_within(0.01).of(DIRECTIONS_BOTTOM)
+  end
+end
