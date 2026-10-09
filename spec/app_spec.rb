@@ -438,6 +438,17 @@ RSpec.describe App do
       expect(last_response.body).not_to include('Найближча зупинка на схемі')
     end
 
+    it 'pins Станція Сихів 385 on the label that was Колодязна' do
+      transfers = [{ 'route' => 'Т31', 'vehicle_type' => 'tram', 'end_stop_code' => END_STOP_CODE }]
+      stub_request(:get, "#{API_BASE}/stops/385/static")
+        .to_return(status: 200, body: valid_body(name: 'Станція Сихів', code: 385, transfers: transfers),
+                   headers: { 'Content-Type' => 'application/json' })
+      get '/385/schema'
+      expect(last_response.body).to include('>Станція Сихів</text>')
+      expect(last_response.body).to include('you-are-here" cx="6377.0" cy="5590.5"')
+      expect(last_response.body.scan('fil84 you-are-here"').length).to eq(1)
+    end
+
     it 'shrinks a longer stop code to fit the title pin' do
       stub_stop(body: valid_body(code: 1001))
       get "/#{STOP_CODE}/schema"

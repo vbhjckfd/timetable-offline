@@ -118,6 +118,9 @@ ALIASES = {
     # the drawing's Головна пошта, renamed Словацького in views/scheme.erb; the Головна пошта
     # stops still stand at that marker
     'словацького': ['словацького', 'головнапошта'],
+    # renamed in views/scheme.erb, shortened to fit
+    'коледжінформтехнологій': ['коледжінформаційнихтехнологій'],
+    'бцукраїнськийкапітал': ['бізнесцентрукраїнськийкапітал'],
 }
 
 # A tram/trolleybus stop the drawing does not label is placed from its real position: a local fit
@@ -148,6 +151,9 @@ STOP_PINS = {
     # Бандери, trams 4/9: no label of their own; the 4/9 marker nearest the Бандери labels.
     555: (4, (3350.3, 3810.9)),
     557: (4, (3350.3, 3810.9)),
+    # Станція Сихів is on the drawing twice: 385 is the stop that was Колодязна, 389 the other.
+    385: (31, (6377.0, 5590.5)),
+    389: (31, (6487.4, 5701.0)),
 }
 
 # Route lines, and the number on each line's end badge (trams 1-9, trolleybuses 22-38).
