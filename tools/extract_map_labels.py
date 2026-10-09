@@ -2,19 +2,20 @@
 """Find where every stop name sits on the 2026 network drawing in views/scheme.erb.
 
 The drawing has no <text>: every label is a run of glyph outlines. This script
-  1. clusters the black (Ukrainian) glyph paths by outline, so one cluster is one letter,
-  2. spells the clusters out via GLYPHS below (read off a contact sheet by eye),
+  1. groups the black (Ukrainian) glyph paths by outline, so one outline is one letter,
+  2. spells the outlines out via GLYPHS below (read off a contact sheet by eye); labels renamed
+     in the drawing are <text class="map-label"> and are read as text,
   3. rebuilds the words and the one-to-three line labels they form,
   4. pins each label to the stop marker nearest to it that serves the name's tram/trolleybus routes,
   5. writes data/map_labels.json: normalised stop name -> [[x, y, [route numbers]], ...] in poster
      coordinates; the app keeps the pins on the stop's own routes, as some names sit on two lines.
 
-Redo it whenever the drawing changes (the cluster ids will change too; run with
---sheet to get a new contact sheet to read). Needs fontTools:  pip install fonttools
+Redo it whenever the drawing changes; if it reports outlines with no letter, run with --sheet
+for a contact sheet and add them to GLYPHS. Needs fontTools:  pip install fonttools
 
     python3 tools/extract_map_labels.py [--stops stops.json] [--sheet sheet.svg]
 """
-import argparse, collections, json, math, os, re, sys, urllib.request
+import argparse, collections, hashlib, json, math, os, re, sys, urllib.request
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.recordingPen import RecordingPen
 from fontTools.svgLib.path import parse_path
@@ -30,19 +31,79 @@ SCHEME_TX, SCHEME_TY, SCHEME_SCALE, PAGE_H = 623.71, 178.2, 3.065, 2267.7166
 
 BLACK = '#1a1a18'  # Ukrainian names; English ones are #7a8890 and are not needed
 
-# Cluster id -> letter, in the order of sheet.svg. Case is irrelevant to the match.
-GLYPH_ROWS = [
-    ([29, 1, 6, 7, 27, 12, 3, 30, 47, 72, 10, 11], 'анкиорвіелта'),
-    ([40, 5, 67, 28, 4, 53, 31, 41, 76, 8, 9, 71], 'оьдссСячгйцП'),
-    ([51, 87, 100, 82, 74, 75, 99, 26, 97, 116, 94, 65], 'уьмзКпУАхЛМБ'),
-    ([113, 126, 77, 54, 95, 73, 108, 111, 66, 85, 55, 90], 'ГйТбВщРшїЗ.-'),
-    ([92, 118, 120, 121, 129, 52, 125, 137, 138, 98, 119, 123], 'НО«»цубШдКжФ'),
-    ([78, 107, 110, 139, 151, 14, 0, 2, 32, 39, 88, 152], 'бІДВваЯі№уаі'),
-    ([161, 177, 178, 181, 20, 193, 69, 16, 33, 56, 86, 89], 'сфХ0укрі4ЮКі'),
-    ([127, 128, 131, 132, 134, 140, 141, 142, 143, 144, 145, 146], "ющє'бх!одока"),
-    ([147, 148, 149, 150, 160, 162, 163, 164, 165, 166, 174, 175], 'алльдерьКаз5'),
-    ([179, 180, 184, 185, 187, 209, 190, 213, 214, 36, 194, 219], "Ч7З'бчНхТовЄ"),
-]
+# Letter -> outlines it is drawn with (a short hash of each glyph's shape; one letter comes in
+# several, as the drawing is set at more than one size and position). Read off a --sheet contact
+# sheet by eye. Case is irrelevant to the match.
+GLYPHS = {
+    'А': ["d822d9a7"],
+    'а': ["23b67a18", "3e926e39", "565ebdca", "67e6a29d", "83ce94e9", "92252f8a", "942b1dcb"],
+    'Б': ["9bd5268e"],
+    'б': ["2219d063", "834fbcb2", "b19fd1f3", "bb8d5182", "cdda361c"],
+    'В': ["a4fe613f", "be41fac9"],
+    'в': ["79c8fbb6", "82d0fbed", "d3841b41"],
+    'Г': ["58b9d174"],
+    'г': ["c374392b"],
+    'Д': ["dbd17567"],
+    'д': ["0ca618ba", "17a57f24", "6832e178", "c220a193"],
+    'е': ["024690de", "577836f1"],
+    'ж': ["77b78935"],
+    'З': ["1fcb77f3", "a8d7aec6"],
+    'з': ["a96e8f6c", "f61c3dcb"],
+    'и': ["df41b782"],
+    'й': ["00e01439", "ab4e2504"],
+    'К': ["0244b2a7", "1496e474", "9f24e6c3", "ae4ab88c"],
+    'к': ["06f3373d", "1bd5c467", "998035c0"],
+    'Л': ["9b34f0f9"],
+    'л': ["4672650e", "89073988", "d1dd6af9"],
+    'М': ["bb6affc7"],
+    'м': ["de18396d"],
+    'Н': ["2f3fb29a", "7f8e1726"],
+    'н': ["f21fe371"],
+    'О': ["ecc22936"],
+    'о': ["29894468", "2fe4176e", "bc2f7459", "c2ae752e", "ecbfb5af"],
+    'П': ["37a79eb7"],
+    'п': ["7d4b0c2e"],
+    'Р': ["b12b2321"],
+    'р': ["41600186", "df5e0a10", "ef275253"],
+    'С': ["3114dbf2"],
+    'с': ["1c82a6f2", "6daabdc1", "9276ebd8"],
+    'Т': ["0bbc1850", "736bed25"],
+    'т': ["0ebdde41"],
+    'У': ["406adf15"],
+    'у': ["0511fab4", "22bb3126", "a2f68d7c", "beaa47e4"],
+    'Ф': ["dfc847dc"],
+    'ф': ["03804d0f"],
+    'Х': ["74cadae5"],
+    'х': ["06f91633", "48035c1b", "7def62b8"],
+    'ц': ["8f1538c5", "9465711f"],
+    'Ч': ["c10cac9e"],
+    'ч': ["e5ba3aa6", "ebe569f6"],
+    'Ш': ["25f6b165"],
+    'ш': ["05b602a6"],
+    'щ': ["2df71a76", "4b6fd61d"],
+    'ь': ["07498d36", "aaafcc78", "ef3c7f3d", "f10167c6"],
+    'Ю': ["99ff1fea"],
+    'ю': ["13e39334"],
+    'Я': ["f7099f18"],
+    'я': ["6809707d"],
+    'Є': ["4db38cb4"],
+    'є': ["5f9c89f9"],
+    'І': ["5c455844"],
+    'і': ["0958975d", "0c89edfe", "2730d5a7", "640a1788", "ac9749ef"],
+    'ї': ["4227dd74"],
+    '!': ["21c8e6cf"],
+    "'": ["b874743f", "edc960c0"],
+    '-': ["33f10915"],
+    '.': ["73d59a97"],
+    '0': ["f1e97622"],
+    '4': ["721c58dd"],
+    '5': ["b51526bc"],
+    '7': ["19ec4910"],
+    '«': ["fa87859a"],
+    '»': ["e2e5d360"],
+    '№': ["7a973936"],
+}
+LETTERS = {h: ch for ch, hs in GLYPHS.items() for h in hs}
 
 # Labels the drawing spells differently from the API: abbreviated, or with a word more.
 ALIASES = {
@@ -54,6 +115,9 @@ ALIASES = {
     'сихівськарайадміністрація': ['сихівськара'],
     'шевченківськарайадміністрація': ['шевченківськара'],
     'клевицького': ['левицького'],
+    # the drawing's Головна пошта, renamed Словацького in views/scheme.erb; the Головна пошта
+    # stops still stand at that marker
+    'словацького': ['словацького', 'головнапошта'],
 }
 
 # A tram/trolleybus stop the drawing does not label is placed from its real position: a local fit
@@ -68,9 +132,7 @@ WALK_WITHIN = 500  # metres
 SAME_PLACE = 100  # metres
 
 # Where the nearest stop as the crow flies is not the one to walk to: name -> name to point at.
-WALK_TO = {
-    'словацького': 'головнапошта',  # not Університет, which is about as close
-}
+WALK_TO = {}
 
 # Markers live in these groups; St. Anne's junction is drawn apart from the rest.
 MARKER_GROUPS = ('scheme-stops', 'scheme-anna')
@@ -120,9 +182,8 @@ def load_glyphs():
         x0, y0, x1, y1 = bp.bounds
         sig = json.dumps([(op, [(round(x - x0, 1), round(y - y0, 1)) for x, y in a]) for op, a in rec.value])
         glyphs.append(dict(fill=f.group(1) if f else None, bbox=(x0, y0, x1, y1), sig=sig, d=m.group(1)))
-    cluster = {}
     for g in glyphs:
-        g['cid'] = cluster.setdefault(g['sig'], len(cluster))
+        g['cid'] = hashlib.sha1(g['sig'].encode()).hexdigest()[:8]
     return glyphs
 
 
@@ -138,8 +199,8 @@ def write_sheet(glyphs, path):
         x0, y0, x1, y1 = g['bbox']
         sc = 48 / max(y1 - y0, x1 - x0, 0.01)
         cells.append('<g transform="translate(%d,%d)"><g transform="translate(5,5) scale(%f) translate(%f,%f)">'
-                     '<path d="%s" transform="matrix(1,0,0,-1,0,%f)"/></g><text x="5" y="62" font-size="11" fill="red">%d (%d)</text></g>'
-                     % ((i % 12) * 110, (i // 12) * 70, sc, -x0, -(PAGE_H - y1), g['d'], PAGE_H, c, len(cl[c])))
+                     '<path d="%s" transform="matrix(1,0,0,-1,0,%f)"/></g><text x="5" y="62" font-size="11" fill="red">%s %s(%d)</text></g>'
+                     % ((i % 12) * 110, (i // 12) * 70, sc, -x0, -(PAGE_H - y1), g['d'], PAGE_H, c, LETTERS.get(c, '?'), len(cl[c])))
     open(path, 'w').write('<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="%d"><rect width="100%%" height="100%%" fill="#fff"/>%s</svg>'
                           % ((len(order) + 11) // 12 * 70, ''.join(cells)))
 
@@ -220,6 +281,34 @@ def group_markers(lines):
         x0, y0, x1, y1 = bp.bounds
         markers.append(((x0 + x1) / 2, (y0 + y1) / 2, max(x1 - x0, y1 - y0)))
     return markers
+
+
+def text_words():
+    """Labels set as <text class="map-label"> (renamed ones) -> words, measured with the font."""
+    from fontTools.ttLib import TTFont
+    font = TTFont(os.path.join(ROOT, 'public', 'fonts', 'MyriadPro', 'MyriadPro-Regular.otf'))
+    cmap, hmtx, glyph_set = font.getBestCmap(), font['hmtx'], font.getGlyphSet()
+    found = []
+    for l in open(SCHEME, encoding='utf8'):
+        m = re.search(r'<text class="map-label" transform="translate\(([-\d.]+) ([-\d.]+)\) scale\(([\d.]+) 1\)" '
+                      r'font-size="([\d.]+)" fill="([^"]+)"[^>]*>([^<]+)</text>', l)
+        if not m or m.group(5) != BLACK:
+            continue
+        x, y, sx, size = (float(v) for v in m.groups()[:4])
+        for word in re.finditer(r'\S+', m.group(6)):
+            at, lo, hi, top, bottom = 0, None, None, 0, 0
+            for i, ch in enumerate(m.group(6)[:word.end()]):
+                name = cmap[ord(ch)]
+                bp = BoundsPen(glyph_set)
+                glyph_set[name].draw(bp)
+                if i >= word.start() and bp.bounds:
+                    lo = at + bp.bounds[0] if lo is None else lo
+                    hi, top, bottom = at + bp.bounds[2], max(top, bp.bounds[3]), min(bottom, bp.bounds[1])
+                at += hmtx[name][0]
+            k = size * sx / 1000
+            found.append(dict(text=word.group(), x0=x + lo * k, x1=x + hi * k,
+                              y0=PAGE_H - y + bottom * size / 1000, y1=PAGE_H - y + top * size / 1000))
+    return found
 
 
 def words(glyphs, letters):
@@ -488,15 +577,11 @@ def main():
         write_sheet(glyphs, args.sheet)
         return
 
-    letters = {}
-    for ids, chars in GLYPH_ROWS:
-        assert len(ids) == len(chars), (ids, chars)
-        letters.update(zip(ids, chars))
-    unknown = {g['cid'] for g in glyphs if g['fill'] == BLACK and g['cid'] not in letters}
+    unknown = {g['cid'] for g in glyphs if g['fill'] == BLACK and g['cid'] not in LETTERS}
     if unknown:
-        sys.exit('clusters with no letter (redo GLYPH_ROWS from a --sheet): %s' % sorted(unknown))
+        sys.exit('outlines with no letter (add them to GLYPHS from a --sheet): %s' % sorted(unknown))
 
-    toks = words(glyphs, letters)
+    toks = words(glyphs, LETTERS) + text_words()
     markers, marker_routes = load_markers()
     cands = labels(toks)
 

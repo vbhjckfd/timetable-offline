@@ -416,15 +416,26 @@ RSpec.describe App do
     end
 
     it 'points a stop off the drawing at the pinned stop nearby' do
-      transfers = [{ 'route' => 'А01', 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }]
+      transfers = [{ 'route' => 'А51', 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }]
+      stub_request(:get, "#{API_BASE}/stops/773/static")
+        .to_return(status: 200, body: valid_body(name: 'Насінна', code: 773, transfers: transfers),
+                   headers: { 'Content-Type' => 'application/json' })
+      get '/773/schema'
+      expect(last_response.body).to include('stroke-dasharray')
+      expect(last_response.body).to include('Найближча зупинка на схемі: «Скнилівський парк», ≈330 м')
+      expect(last_response.body).to include('Nearest stop on the map: Sknylivskyi park, ≈330 m')
+      expect(last_response.body).not_to include('fil84 you-are-here"')
+    end
+
+    it 'pins Словацького on the drawing\'s renamed label' do
+      transfers = [{ 'route' => 'А92', 'vehicle_type' => 'bus', 'end_stop_code' => END_STOP_CODE }]
       stub_request(:get, "#{API_BASE}/stops/8/static")
         .to_return(status: 200, body: valid_body(name: 'Словацького', code: 8, transfers: transfers),
                    headers: { 'Content-Type' => 'application/json' })
       get '/8/schema'
-      expect(last_response.body).to include('stroke-dasharray')
-      expect(last_response.body).to include('Найближча зупинка на схемі: «Головна пошта», ≈190 м')
-      expect(last_response.body).to include('Nearest stop on the map: Main Post Office, ≈190 m')
-      expect(last_response.body).not_to include('fil84 you-are-here"')
+      expect(last_response.body).to include('>Словацького</text>')
+      expect(last_response.body).to include('you-are-here" cx="3848.3" cy="3655.5"')
+      expect(last_response.body).not_to include('Найближча зупинка на схемі')
     end
 
     it 'shrinks a longer stop code to fit the title pin' do

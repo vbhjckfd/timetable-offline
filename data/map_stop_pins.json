@@ -199,20 +199,6 @@
    ]
   ]
  },
- "8": {
-  "at": [
-   [
-    3848.3,
-    3655.5
-   ]
-  ],
-  "walk": {
-   "code": 52,
-   "name": "Головна пошта",
-   "name_en": "Main Post Office",
-   "metres": 190
-  }
- },
  "10": {
   "at": [
    [
@@ -585,7 +571,7 @@
   "walk": {
    "code": 703,
    "name": "Отця Омеляна Ковча",
-   "name_en": "Tatarbunarska",
+   "name_en": "Ottsia Omeliana Kovcha",
    "metres": 110
   }
  },
@@ -929,7 +915,7 @@
   "walk": {
    "code": 438,
    "name": "Угорська",
-   "name_en": "Lytvynenka",
+   "name_en": "Uhorska",
    "metres": 240
   }
  },
@@ -1083,7 +1069,7 @@
   "walk": {
    "code": 438,
    "name": "Угорська",
-   "name_en": "Lytvynenka",
+   "name_en": "Uhorska",
    "metres": 370
   }
  },
@@ -1399,7 +1385,7 @@
   "walk": {
    "code": 674,
    "name": "Бізнес центр Український капітал",
-   "name_en": "Svitanok factory",
+   "name_en": "Biznes tsentr Ukrainskyi kapital",
    "metres": 480
   }
  },
@@ -1471,7 +1457,7 @@
   "walk": {
    "code": 644,
    "name": "ІТ СТЕП Університет",
-   "name_en": "Horodnytska",
+   "name_en": "IT STEP Universytet",
    "metres": 140
   }
  },
@@ -1601,7 +1587,7 @@
   "walk": {
    "code": 659,
    "name": "Лікарня святого Пантелеймона",
-   "name_en": "Emergency Hospital",
+   "name_en": "Likarnia sviatoho Panteleimona",
    "metres": 220
   }
  },
@@ -1615,7 +1601,7 @@
   "walk": {
    "code": 659,
    "name": "Лікарня святого Пантелеймона",
-   "name_en": "Emergency Hospital",
+   "name_en": "Likarnia sviatoho Panteleimona",
    "metres": 380
   }
  },
@@ -1629,7 +1615,7 @@
   "walk": {
    "code": 703,
    "name": "Отця Омеляна Ковча",
-   "name_en": "Tatarbunarska",
+   "name_en": "Ottsia Omeliana Kovcha",
    "metres": 130
   }
  },
@@ -1791,7 +1777,7 @@
   "walk": {
    "code": 659,
    "name": "Лікарня святого Пантелеймона",
-   "name_en": "Emergency Hospital",
+   "name_en": "Likarnia sviatoho Panteleimona",
    "metres": 320
   }
  },
@@ -1847,7 +1833,7 @@
   "walk": {
    "code": 772,
    "name": "Скнилівський парк",
-   "name_en": "Kulchytskoi",
+   "name_en": "Sknylivskyi park",
    "metres": 330
   }
  },
@@ -1861,7 +1847,7 @@
   "walk": {
    "code": 772,
    "name": "Скнилівський парк",
-   "name_en": "Kulchytskoi",
+   "name_en": "Sknylivskyi park",
    "metres": 290
   }
  },
@@ -2169,7 +2155,7 @@
   "walk": {
    "code": 659,
    "name": "Лікарня святого Пантелеймона",
-   "name_en": "Emergency Hospital",
+   "name_en": "Likarnia sviatoho Panteleimona",
    "metres": 450
   }
  },
