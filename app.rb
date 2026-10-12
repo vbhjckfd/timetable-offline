@@ -339,6 +339,8 @@ class App < Sinatra::Base
     :locals => {
       data: data,
       transfers: transfers,
+      # Off unless asked for: ?fade=1 dims the lines that do not serve this stop.
+      fade: %w[1 true yes on].include?(params['fade'].to_s.downcase),
       spot: map_spot_for(stop_code, data['name'], data['transfers']),
       qrcode: qr_svg(stop_code)
     },
