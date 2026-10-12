@@ -6,7 +6,7 @@ REGION  := us-central1
 SERVICE := timetable-offline
 IMAGE   := gcr.io/$(PROJECT)/$(SERVICE)
 
-# Refresh Gemfile.lock inside ruby:3.1-alpine (same as CI/Docker).
+# Refresh Gemfile.lock inside ruby:3.3-alpine (same as CI/Docker).
 build-gemfile:
 	./build-gemfilelock.sh
 
@@ -14,9 +14,9 @@ build-gemfile:
 build:
 	./build.sh
 
-# Run the rspec suite inside ruby:3.1-alpine.
+# Run the rspec suite inside ruby:3.3-alpine.
 test:
-	docker run --rm -v $(PWD):/app -w /app ruby:3.1-alpine \
+	docker run --rm -v $(PWD):/app -w /app ruby:3.3-alpine \
 		sh -c "apk add --no-cache build-base >/dev/null && bundle install --quiet && bundle exec rspec"
 
 # Build + push the image, then roll it out to Cloud Run.
