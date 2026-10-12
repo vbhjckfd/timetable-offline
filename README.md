@@ -2,7 +2,7 @@
 
 **Printable stop stickers for Lviv public transport.** Give it a stop code, get back an SVG you can send straight to a printer and glue to a pole.
 
-[![Ruby](https://img.shields.io/badge/ruby-3.1-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
+[![Ruby](https://img.shields.io/badge/ruby-3.3-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
 [![Sinatra](https://img.shields.io/badge/sinatra-4.2-000000)](https://sinatrarb.com/)
 [![Cloud Run](https://img.shields.io/badge/deploy-Cloud%20Run-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
 [![License: WTFPL](https://img.shields.io/badge/license-WTFPL-brightgreen)](http://www.wtfpl.net/)
@@ -96,9 +96,9 @@ Beyond `layout-28`'s grid the icons would collide with the QR block, so indexes 
 make up
 ```
 
-Regenerates `Gemfile.lock` in `ruby:3.1-alpine`, builds the production image, then brings it up with docker-compose on **http://localhost:4567**.
+Regenerates `Gemfile.lock` in `ruby:3.3-alpine`, builds the production image, then brings it up with docker-compose on **http://localhost:4567**.
 
-Bare Ruby works too, if you have 3.1 around:
+Bare Ruby works too, if you have 3.3 around:
 
 ```bash
 bundle install && ruby app.rb
@@ -110,7 +110,7 @@ bundle install && ruby app.rb
 make test
 ```
 
-Runs RSpec inside `ruby:3.1-alpine`, the same image production uses. The suite stubs the upstream API with WebMock, so it needs no network.
+Runs RSpec inside `ruby:3.3-alpine`, the same image production uses. The suite stubs the upstream API with WebMock, so it needs no network.
 
 ### 🚀 Deploy
 
