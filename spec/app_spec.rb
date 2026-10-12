@@ -293,16 +293,26 @@ RSpec.describe App do
         ]))
       end
 
-      it 'fades the other lines and leaves its own' do
+      it 'fades nothing by default' do
         get "/#{STOP_CODE}/schema"
+        expect(last_response.body).not_to include('opacity: 0.2')
+      end
+
+      it 'fades the other lines and leaves its own with ?fade=1' do
+        get "/#{STOP_CODE}/schema?fade=1"
         expect(last_response.body).to include('#scheme-routes [stroke="#0c67b1"]')
         expect(last_response.body).not_to include('[stroke="#933d90"]')
       end
+
+      it 'fades nothing with ?fade=0' do
+        get "/#{STOP_CODE}/schema?fade=0"
+        expect(last_response.body).not_to include('opacity: 0.2')
+      end
     end
 
-    it 'fades nothing for a stop whose routes are not on the drawing' do
+    it 'fades nothing for a stop whose routes are not on the drawing, even with ?fade=1' do
       stub_stop(body: valid_body)
-      get "/#{STOP_CODE}/schema"
+      get "/#{STOP_CODE}/schema?fade=1"
       expect(last_response.body).not_to include('opacity: 0.2')
     end
 
