@@ -2,7 +2,7 @@
 .PHONY: up build-gemfile build test deploy
 
 PROJECT := timetable-252615
-REGION  := us-central1
+REGION  := europe-north1
 SERVICE := timetable-offline
 IMAGE   := gcr.io/$(PROJECT)/$(SERVICE)
 

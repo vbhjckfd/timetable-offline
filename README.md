@@ -123,7 +123,7 @@ Builds `linux/amd64`, pushes to `gcr.io/timetable-252615/timetable-offline`, and
 Roll back to a previous revision:
 
 ```bash
-gcloud run services update-traffic timetable-offline --project timetable-252615 --region us-central1 --to-revisions REVISION_NAME=100
+gcloud run services update-traffic timetable-offline --project timetable-252615 --region europe-north1 --to-revisions REVISION_NAME=100
 ```
 
 ---
