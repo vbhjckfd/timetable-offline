@@ -55,6 +55,8 @@ The green you-are-here pin sits on the stop's own marker. The drawing has no tex
 
 A 4000 × 300 mm strip (`?length=4` for a 3000 mm plate, for 4 m shelters): stop code, QR and the bilingual name at the sizes from the city's sketch. Myriad Pro stands in for NatGrotesk, and long names shrink to fit.
 
+Link-preview crawlers (Telegram, Facebook, Slack, …) get a small HTML page with `og:`/`twitter:` tags instead of the SVG, pointing at `GET /:code/panel.png` — a 1200×630 card with code, QR and name, rasterised by `rsvg-convert` (installed in the Docker image). Everyone else still gets the raw SVG.
+
 ### `?only=` / `?add=` / `?remove=` — fixing up the route list
 
 Upstream data lags reality, so both routes take three optional comma-separated params:

@@ -10,7 +10,8 @@ ENV BUNDLE_WITHOUT=test
 
 ADD Gemfile* $APP_HOME/
 
-RUN apk add build-base && bundle install && apk del build-base && rm -rf /var/cache/apk/* /usr/local/bundle/cache
+# librsvg renders the PNG link-preview card for /:code/panel.png
+RUN apk add --no-cache rsvg-convert fontconfig && apk add build-base && bundle install && apk del build-base && rm -rf /var/cache/apk/* /usr/local/bundle/cache
 
 ADD . $APP_HOME
 

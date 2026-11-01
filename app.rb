@@ -2,6 +2,8 @@ require 'sinatra/base'
 require 'faraday'
 require 'rqrcode'
 require 'base64'
+require 'open3'
+require 'tmpdir'
 require 'erb'
 require "active_support/all"
 
@@ -286,7 +288,32 @@ class App < Sinatra::Base
     cache_control :no_store
   end
 
+  PUBLIC_URL = ENV['PUBLIC_URL'] || 'https://offline.lad.lviv.ua'
+
+  # Link-preview fetchers read meta tags from HTML and cannot use SVG as an image,
+  # so they get a small HTML page and a PNG; everyone else keeps getting the raw SVG.
+  PREVIEW_BOT = /facebookexternalhit|facebot|twitterbot|telegrambot|slackbot|whatsapp|discordbot|linkedinbot|viber|skypeuripreview|pinterest|redditbot|googlebot|bingbot|applebot|signal|iMessage|vkshare|embedly|bot\b/i
+
   helpers do
+    # librsvg ignores @font-face, so Myriad is made known to it through fontconfig.
+    def rasterize(svg)
+      dir = File.expand_path('public/fonts/MyriadPro', __dir__)
+      conf = File.join(Dir.tmpdir, 'timetable-offline-fonts.conf')
+      File.write(conf, %(<?xml version="1.0"?><fontconfig><include ignore_missing="yes">/etc/fonts/fonts.conf</include><dir>#{dir}</dir></fontconfig>))
+      png, err, status = Open3.capture3({ 'FONTCONFIG_FILE' => conf }, 'rsvg-convert', '--format=png', stdin_data: svg)
+      unless status.success?
+        warn "rsvg-convert failed: #{err}"
+        halt 503, 'Сервіс тимчасово недоступний'
+      end
+      png
+    end
+
+    def panel_data(stop_code)
+      data = load_stop(stop_code)
+      data['name_en'] = eng_name_for(stop_code, data['eng_name'])
+      data
+    end
+
     def qr_svg(stop_code)
       RQRCode::QRCode.new("https://lad.lviv.ua/#{stop_code}").as_svg(
         offset: 0,
@@ -352,8 +379,12 @@ class App < Sinatra::Base
   get '/:code/panel' do
     stop_code = params['code']
 
-    data = load_stop(stop_code)
-    data['name_en'] = eng_name_for(stop_code, data['eng_name'])
+    data = panel_data(stop_code)
+
+    if request.user_agent.to_s.match?(PREVIEW_BOT)
+      return erb :panel_preview, layout: false, content_type: 'text/html',
+                 locals: { data: data, code: data['code'] || stop_code, base_url: PUBLIC_URL }
+    end
 
     erb :panel,
     :locals => {
@@ -363,6 +394,25 @@ class App < Sinatra::Base
       qrcode: qr_svg(stop_code)
     },
     content_type: 'image/svg+xml'
+  end
+
+  # The og:image of the panel page: code, QR and name on a 1200x630 card.
+  get '/:code/panel.png' do
+    stop_code = params['code']
+
+    data = panel_data(stop_code)
+    qrcode = qr_svg(stop_code)
+
+    svg = erb :panel_og, layout: false,
+              locals: {
+                data: data,
+                stop_code: stop_code,
+                qrcode: qrcode,
+                qr_side: qrcode[/width="(\d+)"/, 1].to_f
+              }
+
+    content_type 'image/png'
+    rasterize(svg)
   end
 
   # schema-1 was where the 2026 poster lived while the old one still held /schema.
