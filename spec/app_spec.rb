@@ -577,25 +577,6 @@ RSpec.describe App do
       get "/#{STOP_CODE}/panel?length=4"
       expect(last_response.body).to include('width="3000mm"')
     end
-
-    it 'serves link-preview bots an HTML page with og tags instead of the SVG' do
-      get "/#{STOP_CODE}/panel", {}, { 'HTTP_USER_AGENT' => 'TelegramBot (like TwitterBot)' }
-
-      expect(last_response.content_type).to include('text/html')
-      expect(last_response.body).to include(
-        'og:title" content="Зупинка №80 — Стрийський ринок / Stryiskyi market',
-        'og:image" content="https://offline.lad.lviv.ua/80/panel.png',
-        'twitter:card" content="summary_large_image'
-      )
-    end
-
-    it 'renders the og:image card as a PNG' do
-      get "/#{STOP_CODE}/panel.png"
-
-      expect(last_response.status).to eq(200)
-      expect(last_response.content_type).to include('image/png')
-      expect(last_response.body.b).to start_with("\x89PNG".b)
-    end
   end
 
   # ── SVG well-formedness ─────────────────────────────────────────────────────

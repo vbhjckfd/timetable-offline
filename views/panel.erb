@@ -25,7 +25,7 @@
 
   name_ua = data['name'].to_s
   name_en = data['name_en'].to_s
-  bilingual = name_en.present? && name_en != name_ua
+  bilingual = !name_en.strip.empty? && name_en != name_ua
 
   # No font metrics at hand, so Myriad Regular is approximated at 0.5 em per glyph;
   # a name that would run out of its area is shrunk to fit rather than clipped.
