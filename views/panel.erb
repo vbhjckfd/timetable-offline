@@ -82,7 +82,9 @@
 
   <text x="5226.94" y="4181.44" font-size="3208.34">Код зупинки</text>
   <text x="5349.25" y="7522.17" font-size="3055.55" class="grey">Transport stop ID</text>
-  <text x="4634.25" y="17731.55" font-size="12222.23"><%= ERB::Util.h(code) %></text>
+  <%# Chrome caps font-size at 10000 and drew the code at 82% of its size, so it is
+      set at a tenth and scaled up instead. %>
+  <text transform="translate(4634.25, 17731.55) scale(10)" font-size="1222.223"><%= ERB::Util.h(code) %></text>
 
   <% info_ua.each_with_index do |line, i| %>
   <text x="5481.69" y="<%= (20229.82 + 1561.75 * i).round(2) %>" font-size="<%= info_size %>"><%= ERB::Util.h(line) %></text>
