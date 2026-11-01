@@ -68,10 +68,9 @@
 %><?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="<%= width %>mm" height="300mm" viewBox="0 0 <%= width %> 300" version="1.1" style="text-rendering:geometricPrecision; fill-rule:evenodd; clip-rule:evenodd">
   <defs>
-    <%= NATGROTESK_FONT %>
     <style type="text/css">
       <![CDATA[
-      @font-face { font-family: "NatGrotesk"; font-weight: normal; font-style: normal; src: url("#FontID0") format(svg); }
+      @font-face { font-family: "NatGrotesk"; font-weight: normal; font-style: normal; src: url("data:font/otf;base64,<%= NATGROTESK_OTF %>") format("opentype"); }
       text { font-family: 'NatGrotesk', 'Myriad Pro', sans-serif; font-weight: normal; fill: #FEFEFE; }
       .grey { fill: #C5C6C6; }
       ]]>

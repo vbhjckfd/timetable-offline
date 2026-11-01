@@ -571,7 +571,7 @@ RSpec.describe App do
       expect(last_response.status).to eq(200)
       expect(last_response.content_type).to include('image/svg+xml')
       expect(last_response.body).to include('width="4000mm"', 'lad.lviv.ua/80', 'id="stop-qr"',
-                                            'Стрийський ринок', 'Stryiskyi market', '<font id="FontID0"')
+                                            'Стрийський ринок', 'Stryiskyi market', 'data:font/otf;base64,')
     end
 
     it 'drops the divider when the stop has no English name' do

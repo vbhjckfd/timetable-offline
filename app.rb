@@ -10,12 +10,14 @@ require_relative './eng_names.rb'
 ENG_NAMES_BY_CODE = ENG_NAMES.each_with_object({}) { |entry, h| h[entry[:code]] = entry[:eng_name] }.freeze
 
 # NatGrotesk comes only as an SVG font, cut from the city's panel template. The
-# panel inlines its <font> element, and measures names with its glyph advances
+# panel embeds the OpenType font tools/natgrotesk_otf.py builds from it, which
+# browsers render too, and measures names with the SVG font's glyph advances
 # (per 1000 units of em) to centre and shrink them.
-NATGROTESK_FONT = File.read(File.join(__dir__, 'public/fonts/NatGrotesk/NatGrotesk-Regular.svg'))[%r{<font\b.*</font>}m].freeze
-NATGROTESK_DEFAULT_ADVANCE = NATGROTESK_FONT[/<font\b[^>]*\shoriz-adv-x="([\d.]+)"/, 1].to_f
-NATGROTESK_ADVANCES = NATGROTESK_FONT.scan(/<glyph unicode="([^"]*)" horiz-adv-x="([\d.]+)"/)
-                                     .to_h { |glyph, advance| [CGI.unescapeHTML(glyph), advance.to_f] }.freeze
+NATGROTESK_OTF = Base64.strict_encode64(File.binread(File.join(__dir__, 'public/fonts/NatGrotesk/NatGrotesk-Regular.otf'))).freeze
+NATGROTESK_SVG = File.read(File.join(__dir__, 'public/fonts/NatGrotesk/NatGrotesk-Regular.svg'))
+NATGROTESK_DEFAULT_ADVANCE = NATGROTESK_SVG[/<font\b[^>]*\shoriz-adv-x="([\d.]+)"/, 1].to_f
+NATGROTESK_ADVANCES = NATGROTESK_SVG.scan(/<glyph unicode="([^"]*)" horiz-adv-x="([\d.]+)"/)
+                                    .to_h { |glyph, advance| [CGI.unescapeHTML(glyph), advance.to_f] }.freeze
 
 def natgrotesk_width(text, size)
   text.to_s.each_char.sum { |c| NATGROTESK_ADVANCES.fetch(c, NATGROTESK_DEFAULT_ADVANCE) } * size / 1000.0
