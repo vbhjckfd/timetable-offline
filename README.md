@@ -142,7 +142,6 @@ gcloud run services update-traffic timetable-offline --project timetable-252615 
 | `views/{header,footer,fonts}.erb` | Shared partials, including the base64 font blobs |
 | `public/icons/` | 148 hand-made SVGs — 141 route badges (`t25.svg`, `47a.svg`, …) plus the vehicle glyphs |
 | `eng_names.rb` | Fallback English stop names, for the handful the API has no translation for |
-| `as_pdf.rb` | Ad-hoc script that batch-renders stickers to PDF via wkhtmltopdf |
 | `spec/` | RSpec suite |
 
 ### 🔤 Route name normalisation

@@ -11,12 +11,6 @@ gem 'rack', '>= 3.1.18'
 
 gem 'rqrcode', '~> 2.1'
 
-# Only for the as_pdf.rb batch script, not the server
-group :tools do
-  gem 'parallel'
-  gem 'ruby-progressbar'
-end
-
 gem 'faraday', '>= 1.10.6', '< 2'
 
 group :test do

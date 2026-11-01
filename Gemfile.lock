@@ -38,7 +38,6 @@ GEM
     multipart-post (2.4.1)
     mustermann (3.1.1)
     nio4r (2.7.5)
-    parallel (1.20.1)
     public_suffix (6.0.2)
     puma (8.0.2)
       nio4r (~> 2.0)
@@ -72,7 +71,6 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.7)
-    ruby-progressbar (1.10.1)
     ruby2_keywords (0.0.5)
     sinatra (4.2.1)
       logger (>= 1.6.0)
@@ -92,14 +90,12 @@ PLATFORMS
 
 DEPENDENCIES
   faraday (>= 1.10.6, < 2)
-  parallel
   puma (>= 8.0.2)
   rack (>= 3.1.18)
   rack-test
   rackup (~> 2.2)
   rqrcode (~> 2.1)
   rspec
-  ruby-progressbar
   sinatra (~> 4.2, >= 4.2.0)
   webmock
 

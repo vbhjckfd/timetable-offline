@@ -15,7 +15,6 @@ spec
 tools
 .wrangler
 LICENSE
-as_pdf.rb
 # Design sources, not read at runtime
 views/zzz*.svg
 views/layout-*.svg
