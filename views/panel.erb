@@ -13,12 +13,12 @@
   info_size = 1283.34
   info_en_size = 1161.12
   info_ua = [
-    'Час очікування транспорту.',
+    'Час очікування транспорту',
     "Відвідайте сайт lad.lviv.ua/#{code}",
     'або відскануйте QR-код'
   ]
   info_en = [
-    'Transport waiting time',
+    'Transport waiting time:',
     "Visit website lad.lviv.ua/#{code}",
     'or scan QR-code'
   ]
@@ -26,14 +26,17 @@
   # English block keeps at least the template's gap from the longest of them.
   info_en_x = [32306.47, 5481.69 + info_ua.map { |l| natgrotesk_width(l, info_size) }.max + 578].max
 
-  # As on the plates already up: the QR stands right of the code, its white 6 mm
-  # margin sitting on the code's baseline and lined up with the English lines.
+  # The template's white square for the QR: 101 mm, standing on the code's
+  # baseline, lined up with the English lines. The code sits inside it on a 6 mm
+  # quiet margin.
+  qr_box = 8748.04
+  qr_box_y = 8965.1
   qr_pad = 6 * u
-  qr_size = 105 * u
+  qr_size = qr_box - 2 * qr_pad
   qr_x = info_en_x + qr_pad
-  qr_y = 17731.55 - qr_pad - qr_size
+  qr_y = qr_box_y + qr_pad
   qr_side = qrcode[/width="(\d+)"/, 1].to_f
-  info_end = [info_en_x + info_en.map { |l| natgrotesk_width(l, info_en_size) }.max, qr_x + qr_size + qr_pad].max
+  info_end = [info_en_x + info_en.map { |l| natgrotesk_width(l, info_en_size) }.max, info_en_x + qr_box].max
 
   name_ua = data['name'].to_s
   name_en = data['name_en'].to_s
@@ -85,7 +88,7 @@
   <% info_ua.each_with_index do |line, i| %>
   <text x="5481.69" y="<%= (20229.82 + 1561.75 * i).round(2) %>" font-size="<%= info_size %>"><%= ERB::Util.h(line) %></text>
   <% end %>
-  <rect x="<%= info_en_x.round(2) %>" y="<%= (qr_y - qr_pad).round(2) %>" width="<%= (qr_size + 2 * qr_pad).round(2) %>" height="<%= (qr_size + 2 * qr_pad).round(2) %>" fill="#fff"/>
+  <rect x="<%= info_en_x.round(2) %>" y="<%= qr_box_y %>" width="<%= qr_box %>" height="<%= qr_box %>" fill="#FEFEFE"/>
   <g id="stop-qr" transform="translate(<%= qr_x.round(2) %>, <%= qr_y.round(2) %>) scale(<%= (qr_size / qr_side).round(4) %>)">
     <%= qrcode %>
   </g>
