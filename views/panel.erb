@@ -1,0 +1,87 @@
+<%
+  # Units are millimetres: the panel is printed 1:1, 300 mm tall, and 3000 or 4000 mm
+  # long depending on the shelter. Font sizes come from the city's sketch in points.
+  pt = 25.4 / 72
+  font_data = Base64.strict_encode64(File.binread('./public/fonts/MyriadPro/MyriadPro-Regular.otf'))
+
+  label_ua = 105 * pt
+  label_en = 100 * pt
+  code_size = 400 * pt
+  small_ua = 42 * pt
+  small_en = 38 * pt
+  name_size = 320 * pt
+
+  left = 40
+  qr_size = 105
+  qr_x = 470
+  qr_y = 110
+  qr_side = qrcode[/width="(\d+)"/, 1].to_f
+  qr_pad = 6
+
+  # Everything right of the QR block belongs to the name; it is centred in that area.
+  area_x = 960
+  area_w = width - area_x - 80
+  area_cx = area_x + area_w / 2.0
+
+  name_ua = data['name'].to_s
+  name_en = data['name_en'].to_s
+  bilingual = name_en.present? && name_en != name_ua
+
+  # No font metrics at hand, so Myriad Regular is approximated at 0.5 em per glyph;
+  # a name that would run out of its area is shrunk to fit rather than clipped.
+  est = ->(text, size) { text.length * size * 0.5 }
+  gap = 120
+  if bilingual
+    half = (area_w - gap) / 2.0
+    scale = [1.0, half / est.(name_ua, name_size), half / est.(name_en, name_size)].min
+    size = name_size * scale
+    ua_x = area_cx - gap / 2.0 - half / 2.0
+    en_x = area_cx + gap / 2.0 + half / 2.0
+  else
+    size = name_size * [1.0, area_w / est.(name_ua, name_size)].min
+    ua_x = area_cx
+  end
+  name_y = 150 + size * 0.33
+
+  code = data['code'] || stop_code
+%><?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="<%= width %>mm" height="300mm" viewBox="0 0 <%= width %> 300" version="1.1">
+  <defs>
+    <style type="text/css">
+      <![CDATA[
+      @font-face {
+        font-family: "MyriadPro-Regular";
+        src: url("data:font/otf;base64,<%= font_data %>") format(opentype);
+      }
+      text { font-family: 'MyriadPro-Regular', 'Myriad Pro', sans-serif; fill: #fff; }
+      ]]>
+    </style>
+  </defs>
+  <rect width="<%= width %>" height="300" fill="#444240"/>
+
+  <text x="<%= left %>" y="<%= (30 + label_ua * 0.8).round(2) %>" font-size="<%= label_ua.round(2) %>">Код зупинки</text>
+  <text x="<%= left %>" y="<%= (30 + label_ua * 0.8 + label_en * 0.95).round(2) %>" font-size="<%= label_en.round(2) %>">Transport stop ID</text>
+  <text x="<%= left - 6 %>" y="222" font-size="<%= code_size.round(2) %>"><%= ERB::Util.h(code) %></text>
+
+  <text font-size="<%= small_ua.round(2) %>">
+    <tspan x="<%= left %>" y="254">Час очікування транспорту.</tspan>
+    <tspan x="<%= left %>" dy="<%= (small_ua * 1.2).round(2) %>">Відвідайте сайт lad.lviv.ua/<%= ERB::Util.h(code) %></tspan>
+    <tspan x="<%= left %>" dy="<%= (small_ua * 1.2).round(2) %>">або відскануйте QR-код</tspan>
+  </text>
+
+  <rect x="<%= qr_x - qr_pad %>" y="<%= qr_y - qr_pad %>" width="<%= qr_size + 2 * qr_pad %>" height="<%= qr_size + 2 * qr_pad %>" fill="#fff"/>
+  <g id="stop-qr" transform="translate(<%= qr_x %>, <%= qr_y %>) scale(<%= (qr_size / qr_side).round(4) %>)">
+    <%= qrcode %>
+  </g>
+  <text font-size="<%= small_en.round(2) %>">
+    <tspan x="<%= qr_x - qr_pad %>" y="254">Transport waiting time</tspan>
+    <tspan x="<%= qr_x - qr_pad %>" dy="<%= (small_en * 1.2).round(2) %>">Visit website lad.lviv.ua/<%= ERB::Util.h(code) %></tspan>
+    <tspan x="<%= qr_x - qr_pad %>" dy="<%= (small_en * 1.2).round(2) %>">or scan QR-code</tspan>
+  </text>
+
+  <text x="<%= ua_x.round(2) %>" y="<%= name_y.round(2) %>" font-size="<%= size.round(2) %>" text-anchor="middle"><%= ERB::Util.h(name_ua) %></text>
+  <% if bilingual %>
+  <rect x="<%= (area_cx - 2).round(2) %>" y="55" width="4" height="190" fill="#fff"/>
+  <text x="<%= en_x.round(2) %>" y="<%= name_y.round(2) %>" font-size="<%= size.round(2) %>" text-anchor="middle"><%= ERB::Util.h(name_en) %></text>
+  <% end %>
+</svg>

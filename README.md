@@ -51,6 +51,10 @@ With `?fade=1` the stop's own tram and trolleybus lines stay bold and every othe
 
 The green you-are-here pin sits on the stop's own marker. The drawing has no text, only glyph outlines, so `tools/extract_map_labels.py` spells the labels back out, matches them to `api.lad.lviv.ua/stops.json` names, reads which route lines run through each marker, and writes `data/map_labels.json` (name → marker positions and their routes) plus `data/map_stop_pins.json` (hand-placed stops, by code); rerun it when the drawing changes. A name on two lines keeps only the pin on the stop's own line. A tram or trolleybus stop the drawing does not label is placed on its own line's marker from its real position; any other stop within 500 m of a pinned one gets a dashed ring on that stop and a caption naming it (within 100 m it counts as the same stop); further out, no pin. The old `/:code/schema-1` redirects here.
 
+### `GET /:code/panel` — the plate inside the shelter
+
+A 4000 × 300 mm strip (`?length=4` for a 3000 mm plate, for 4 m shelters): stop code, QR and the bilingual name at the sizes from the city's sketch. Myriad Pro stands in for NatGrotesk, and long names shrink to fit.
+
 ### `?only=` / `?add=` / `?remove=` — fixing up the route list
 
 Upstream data lags reality, so both routes take three optional comma-separated params:

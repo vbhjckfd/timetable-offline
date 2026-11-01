@@ -560,6 +560,25 @@ RSpec.describe App do
     end
   end
 
+  # ── GET /:code/panel ────────────────────────────────────────────────────────
+
+  describe 'GET /:code/panel' do
+    before { stub_stop(body: valid_body(eng_name: 'Stryiskyi market')) }
+
+    it 'renders a 4000 mm plate with code, QR and both names' do
+      get "/#{STOP_CODE}/panel"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('image/svg+xml')
+      expect(last_response.body).to include('width="4000mm"', 'lad.lviv.ua/80', 'Стрийський ринок', 'Stryiskyi market')
+    end
+
+    it 'renders a 3000 mm plate for 4 m shelters' do
+      get "/#{STOP_CODE}/panel?length=4"
+      expect(last_response.body).to include('width="3000mm"')
+    end
+  end
+
   # ── SVG well-formedness ─────────────────────────────────────────────────────
 
   describe 'SVG output' do

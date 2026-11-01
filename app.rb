@@ -347,6 +347,24 @@ class App < Sinatra::Base
     content_type: 'image/svg+xml'
   end
 
+  # The plate that goes inside the shelter: code, QR and name on one strip.
+  # Shelters 4 m long take a 3000 mm plate, 5 m and longer take 4000 mm.
+  get '/:code/panel' do
+    stop_code = params['code']
+
+    data = load_stop(stop_code)
+    data['name_en'] = eng_name_for(stop_code, data['eng_name'])
+
+    erb :panel,
+    :locals => {
+      data: data,
+      stop_code: stop_code,
+      width: params['length'].to_s == '4' ? 3000 : 4000,
+      qrcode: qr_svg(stop_code)
+    },
+    content_type: 'image/svg+xml'
+  end
+
   # schema-1 was where the 2026 poster lived while the old one still held /schema.
   get '/:code/schema-1' do
     query = request.query_string.empty? ? '' : "?#{request.query_string}"
