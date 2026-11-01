@@ -565,12 +565,22 @@ RSpec.describe App do
   describe 'GET /:code/panel' do
     before { stub_stop(body: valid_body(eng_name: 'Stryiskyi market')) }
 
-    it 'renders a 4000 mm plate with code, QR and both names' do
+    it 'renders a 4000 mm plate with code, QR and both names in NatGrotesk' do
       get "/#{STOP_CODE}/panel"
 
       expect(last_response.status).to eq(200)
       expect(last_response.content_type).to include('image/svg+xml')
-      expect(last_response.body).to include('width="4000mm"', 'lad.lviv.ua/80', 'Стрийський ринок', 'Stryiskyi market')
+      expect(last_response.body).to include('width="4000mm"', 'lad.lviv.ua/80', 'id="stop-qr"',
+                                            'Стрийський ринок', 'Stryiskyi market', '<font id="FontID0"')
+    end
+
+    it 'drops the divider when the stop has no English name' do
+      stub_stop(body: valid_body(eng_name: ''))
+      stub_const('ENG_NAMES_BY_CODE', {})
+
+      get "/#{STOP_CODE}/panel"
+      expect(last_response.body).to include('text-anchor="middle"')
+      expect(last_response.body).not_to include('text-anchor="end"')
     end
 
     it 'renders a 3000 mm plate for 4 m shelters' do

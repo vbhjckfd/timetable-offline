@@ -1,87 +1,104 @@
 <%
-  # Units are millimetres: the panel is printed 1:1, 300 mm tall, and 3000 or 4000 mm
-  # long depending on the shelter. Font sizes come from the city's sketch in points.
-  pt = 25.4 / 72
-  font_data = Base64.strict_encode64(File.binread('./public/fonts/MyriadPro/MyriadPro-Regular.otf'))
+  # Drawn on the city's template (CorelDRAW, "Топер2"): its units are 1/2200 inch,
+  # so the 300 mm plate is 25984 units tall and every position below is the
+  # template's own. The viewBox stays in mm, which timetable-pdf sizes the page
+  # from, and one group scales the template into it. The template is 3000 mm long; the 4000 mm plate keeps the left
+  # block where it is and moves the name half the extra length to the right.
+  u = 2200 / 25.4
+  vw = width * u
+  shift = vw - 3000 * u
 
-  label_ua = 105 * pt
-  label_en = 100 * pt
-  code_size = 400 * pt
-  small_ua = 42 * pt
-  small_en = 38 * pt
-  name_size = 320 * pt
+  code = (data['code'] || stop_code).to_s
 
-  left = 40
-  qr_size = 105
-  qr_x = 470
-  qr_y = 110
+  info_size = 1283.34
+  info_en_size = 1161.12
+  info_ua = [
+    'Час очікування транспорту.',
+    "Відвідайте сайт lad.lviv.ua/#{code}",
+    'або відскануйте QR-код'
+  ]
+  info_en = [
+    'Transport waiting time',
+    "Visit website lad.lviv.ua/#{code}",
+    'or scan QR-code'
+  ]
+  # A four-digit code pushes the Ukrainian lines into the English ones, so the
+  # English block keeps at least the template's gap from the longest of them.
+  info_en_x = [32306.47, 5481.69 + info_ua.map { |l| natgrotesk_width(l, info_size) }.max + 578].max
+
+  # As on the plates already up: the QR stands right of the code, its white 6 mm
+  # margin sitting on the code's baseline and lined up with the English lines.
+  qr_pad = 6 * u
+  qr_size = 105 * u
+  qr_x = info_en_x + qr_pad
+  qr_y = 17731.55 - qr_pad - qr_size
   qr_side = qrcode[/width="(\d+)"/, 1].to_f
-  qr_pad = 6
-
-  # Everything right of the QR block belongs to the name; it is centred in that area.
-  area_x = 960
-  area_w = width - area_x - 80
-  area_cx = area_x + area_w / 2.0
+  info_end = [info_en_x + info_en.map { |l| natgrotesk_width(l, info_en_size) }.max, qr_x + qr_size + qr_pad].max
 
   name_ua = data['name'].to_s
   name_en = data['name_en'].to_s
   bilingual = !name_en.strip.empty? && name_en != name_ua
 
-  # No font metrics at hand, so Myriad Regular is approximated at 0.5 em per glyph;
-  # a name that would run out of its area is shrunk to fit rather than clipped.
-  est = ->(text, size) { text.length * size * 0.5 }
-  gap = 120
+  # The names sit either side of the template's divider bar, the Ukrainian one
+  # ending and the English one starting a fixed gap from it. A name that would run
+  # into the left block or off the plate shrinks both, so they stay one size.
+  name_size = 9777.79
+  bar_left = 143355.19 + shift / 2
+  bar_right = 144210.76 + shift / 2
+  bar_cx = (bar_left + bar_right) / 2
+  gap = 8000
+  room_left = info_end + 6000
+  room_right = vw - 4634.25
   if bilingual
-    half = (area_w - gap) / 2.0
-    scale = [1.0, half / est.(name_ua, name_size), half / est.(name_en, name_size)].min
-    size = name_size * scale
-    ua_x = area_cx - gap / 2.0 - half / 2.0
-    en_x = area_cx + gap / 2.0 + half / 2.0
+    scale = [
+      1.0,
+      (bar_left - gap - room_left) / natgrotesk_width(name_ua, name_size),
+      (room_right - bar_right - gap) / natgrotesk_width(name_en, name_size)
+    ].min
   else
-    size = name_size * [1.0, area_w / est.(name_ua, name_size)].min
-    ua_x = area_cx
+    half = [bar_cx - room_left, room_right - bar_cx].min
+    scale = [1.0, 2 * half / natgrotesk_width(name_ua, name_size)].min
   end
-  name_y = 150 + size * 0.33
-
-  code = data['code'] || stop_code
+  size = name_size * scale
+  # Shrunk names stay centred on the template's line rather than its baseline.
+  name_y = 15466.77 - 0.35 * (name_size - size)
 %><?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="<%= width %>mm" height="300mm" viewBox="0 0 <%= width %> 300" version="1.1">
+<svg xmlns="http://www.w3.org/2000/svg" width="<%= width %>mm" height="300mm" viewBox="0 0 <%= width %> 300" version="1.1" style="text-rendering:geometricPrecision; fill-rule:evenodd; clip-rule:evenodd">
   <defs>
+    <%= NATGROTESK_FONT %>
     <style type="text/css">
       <![CDATA[
-      @font-face {
-        font-family: "MyriadPro-Regular";
-        src: url("data:font/otf;base64,<%= font_data %>") format(opentype);
-      }
-      text { font-family: 'MyriadPro-Regular', 'Myriad Pro', sans-serif; fill: #fff; }
+      @font-face { font-family: "NatGrotesk"; font-weight: normal; font-style: normal; src: url("#FontID0") format(svg); }
+      text { font-family: 'NatGrotesk', 'Myriad Pro', sans-serif; font-weight: normal; fill: #FEFEFE; }
+      .grey { fill: #C5C6C6; }
       ]]>
     </style>
   </defs>
-  <rect width="<%= width %>" height="300" fill="#444240"/>
+  <rect width="<%= width %>" height="300" fill="#56564E"/>
 
-  <text x="<%= left %>" y="<%= (30 + label_ua * 0.8).round(2) %>" font-size="<%= label_ua.round(2) %>">Код зупинки</text>
-  <text x="<%= left %>" y="<%= (30 + label_ua * 0.8 + label_en * 0.95).round(2) %>" font-size="<%= label_en.round(2) %>">Transport stop ID</text>
-  <text x="<%= left - 6 %>" y="222" font-size="<%= code_size.round(2) %>"><%= ERB::Util.h(code) %></text>
+  <g transform="scale(<%= (1 / u).round(8) %>)">
 
-  <text font-size="<%= small_ua.round(2) %>">
-    <tspan x="<%= left %>" y="254">Час очікування транспорту.</tspan>
-    <tspan x="<%= left %>" dy="<%= (small_ua * 1.2).round(2) %>">Відвідайте сайт lad.lviv.ua/<%= ERB::Util.h(code) %></tspan>
-    <tspan x="<%= left %>" dy="<%= (small_ua * 1.2).round(2) %>">або відскануйте QR-код</tspan>
-  </text>
+  <text x="5226.94" y="4181.44" font-size="3208.34">Код зупинки</text>
+  <text x="5349.25" y="7522.17" font-size="3055.55" class="grey">Transport stop ID</text>
+  <text x="4634.25" y="17731.55" font-size="12222.23"><%= ERB::Util.h(code) %></text>
 
-  <rect x="<%= qr_x - qr_pad %>" y="<%= qr_y - qr_pad %>" width="<%= qr_size + 2 * qr_pad %>" height="<%= qr_size + 2 * qr_pad %>" fill="#fff"/>
-  <g id="stop-qr" transform="translate(<%= qr_x %>, <%= qr_y %>) scale(<%= (qr_size / qr_side).round(4) %>)">
+  <% info_ua.each_with_index do |line, i| %>
+  <text x="5481.69" y="<%= (20229.82 + 1561.75 * i).round(2) %>" font-size="<%= info_size %>"><%= ERB::Util.h(line) %></text>
+  <% end %>
+  <rect x="<%= info_en_x.round(2) %>" y="<%= (qr_y - qr_pad).round(2) %>" width="<%= (qr_size + 2 * qr_pad).round(2) %>" height="<%= (qr_size + 2 * qr_pad).round(2) %>" fill="#fff"/>
+  <g id="stop-qr" transform="translate(<%= qr_x.round(2) %>, <%= qr_y.round(2) %>) scale(<%= (qr_size / qr_side).round(4) %>)">
     <%= qrcode %>
   </g>
-  <text font-size="<%= small_en.round(2) %>">
-    <tspan x="<%= qr_x - qr_pad %>" y="254">Transport waiting time</tspan>
-    <tspan x="<%= qr_x - qr_pad %>" dy="<%= (small_en * 1.2).round(2) %>">Visit website lad.lviv.ua/<%= ERB::Util.h(code) %></tspan>
-    <tspan x="<%= qr_x - qr_pad %>" dy="<%= (small_en * 1.2).round(2) %>">or scan QR-code</tspan>
-  </text>
-
-  <text x="<%= ua_x.round(2) %>" y="<%= name_y.round(2) %>" font-size="<%= size.round(2) %>" text-anchor="middle"><%= ERB::Util.h(name_ua) %></text>
-  <% if bilingual %>
-  <rect x="<%= (area_cx - 2).round(2) %>" y="55" width="4" height="190" fill="#fff"/>
-  <text x="<%= en_x.round(2) %>" y="<%= name_y.round(2) %>" font-size="<%= size.round(2) %>" text-anchor="middle"><%= ERB::Util.h(name_en) %></text>
+  <% info_en.each_with_index do |line, i| %>
+  <text x="<%= info_en_x.round(2) %>" y="<%= (20229.82 + 1413.015 * i).round(2) %>" font-size="<%= info_en_size %>" class="grey"><%= ERB::Util.h(line) %></text>
   <% end %>
+
+  <% if bilingual %>
+  <text x="<%= (bar_left - gap).round(2) %>" y="<%= name_y.round(2) %>" font-size="<%= size.round(2) %>" text-anchor="end"><%= ERB::Util.h(name_ua) %></text>
+  <path transform="translate(<%= (shift / 2).round(2) %>, 0)" fill="#FEFEFE" d="M144210.76 21351.17c0,49.31 -5.66,95.33 -18.85,134.77 -13.19,36.17 -35.81,69.02 -67.84,95.33 -33.92,26.3 -77.26,46.02 -133.8,55.88 -54.65,13.14 -124.38,19.71 -209.18,19.71 -81.04,0 -148.88,-6.57 -205.41,-19.71 -54.65,-9.87 -98,-29.58 -131.92,-55.88 -32.04,-26.3 -56.53,-59.16 -67.84,-95.33 -13.19,-39.44 -20.73,-85.46 -20.73,-134.77l0 -16718.03c0,-46.01 7.54,-88.75 20.73,-124.91 11.31,-39.44 35.81,-72.31 67.84,-98.62 33.92,-26.29 77.27,-42.73 131.92,-55.87 56.53,-13.16 124.38,-19.73 205.41,-19.73 84.8,0 154.53,6.57 209.18,19.73 56.54,13.14 99.88,29.58 133.8,55.87 32.04,26.3 54.65,59.17 67.84,98.62 13.19,36.15 18.85,78.9 18.85,124.91l0 16718.03z"/>
+  <text x="<%= (bar_right + gap).round(2) %>" y="<%= name_y.round(2) %>" font-size="<%= size.round(2) %>"><%= ERB::Util.h(name_en) %></text>
+  <% else %>
+  <text x="<%= bar_cx.round(2) %>" y="<%= name_y.round(2) %>" font-size="<%= size.round(2) %>" text-anchor="middle"><%= ERB::Util.h(name_ua) %></text>
+  <% end %>
+  </g>
 </svg>

@@ -53,7 +53,7 @@ The green you-are-here pin sits on the stop's own marker. The drawing has no tex
 
 ### `GET /:code/panel` — the plate inside the shelter
 
-A 4000 × 300 mm strip (`?length=4` for a 3000 mm plate, for 4 m shelters): stop code, QR and the bilingual name at the sizes from the city's sketch. Myriad Pro stands in for NatGrotesk, and long names shrink to fit.
+A 4000 × 300 mm strip (`?length=4` for a 3000 mm plate, for 4 m shelters), drawn on the city's CorelDRAW template "Топер2": stop code, QR and site link to arrivals (in place of the template's SMS lines, as on the plates already up), and the Ukrainian and English names either side of the divider bar. The template is 3000 mm; the 4000 mm plate moves the names half the extra length right. Text is set in NatGrotesk, inlined from `public/fonts/NatGrotesk/NatGrotesk-Regular.svg` as an SVG font (Corel's export, plus the space glyph it lacked); wkhtmltopdf and Safari render it, Chrome and Firefox fall back to Myriad Pro or sans-serif. Its glyph advances also measure the names, so long ones shrink to fit, both at the same size, and a stop with no English name gets its name centred on the bar without it.
 
 ### `?only=` / `?add=` / `?remove=` — fixing up the route list
 

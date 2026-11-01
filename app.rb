@@ -3,10 +3,23 @@ require 'faraday'
 require 'rqrcode'
 require 'base64'
 require 'erb'
+require 'cgi'
 
 require_relative './eng_names.rb'
 
 ENG_NAMES_BY_CODE = ENG_NAMES.each_with_object({}) { |entry, h| h[entry[:code]] = entry[:eng_name] }.freeze
+
+# NatGrotesk comes only as an SVG font, cut from the city's panel template. The
+# panel inlines its <font> element, and measures names with its glyph advances
+# (per 1000 units of em) to centre and shrink them.
+NATGROTESK_FONT = File.read(File.join(__dir__, 'public/fonts/NatGrotesk/NatGrotesk-Regular.svg'))[%r{<font\b.*</font>}m].freeze
+NATGROTESK_DEFAULT_ADVANCE = NATGROTESK_FONT[/<font\b[^>]*\shoriz-adv-x="([\d.]+)"/, 1].to_f
+NATGROTESK_ADVANCES = NATGROTESK_FONT.scan(/<glyph unicode="([^"]*)" horiz-adv-x="([\d.]+)"/)
+                                     .to_h { |glyph, advance| [CGI.unescapeHTML(glyph), advance.to_f] }.freeze
+
+def natgrotesk_width(text, size)
+  text.to_s.each_char.sum { |c| NATGROTESK_ADVANCES.fetch(c, NATGROTESK_DEFAULT_ADVANCE) } * size / 1000.0
+end
 
 # The API is the source of truth for English names: it covers more stops than
 # eng_names.rb and is kept current (e.g. stop 27 is "Lem Square" upstream, still
