@@ -4,13 +4,13 @@
 PROJECT := timetable-252615
 REGION  := europe-north1
 SERVICE := timetable-offline
-IMAGE   := gcr.io/$(PROJECT)/$(SERVICE)
+IMAGE   := $(REGION)-docker.pkg.dev/$(PROJECT)/timetable/$(SERVICE)
 
 # Refresh Gemfile.lock inside ruby:3.3-alpine (same as CI/Docker).
 build-gemfile:
 	./build-gemfilelock.sh
 
-# Build linux/amd64 image and push to gcr.io (production).
+# Build linux/amd64 image and push to Artifact Registry (production).
 build:
 	./build.sh
 
@@ -20,7 +20,7 @@ test:
 		sh -c "apk add --no-cache build-base >/dev/null && bundle install --quiet && bundle exec rspec"
 
 # Build + push the image, then roll it out to Cloud Run.
-# `build.sh` only updates gcr.io; without this the service keeps serving the old revision.
+# `build.sh` only pushes the image; without this the service keeps serving the old revision.
 deploy: build
 	gcloud run deploy $(SERVICE) \
 		--project $(PROJECT) \

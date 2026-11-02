@@ -1,2 +1,2 @@
-docker build  --platform linux/amd64 -t gcr.io/timetable-252615/timetable-offline .
-docker push gcr.io/timetable-252615/timetable-offline
+docker build  --platform linux/amd64 -t europe-north1-docker.pkg.dev/timetable-252615/timetable/timetable-offline .
+docker push europe-north1-docker.pkg.dev/timetable-252615/timetable/timetable-offline

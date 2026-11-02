@@ -122,7 +122,7 @@ Runs RSpec inside `ruby:3.3-alpine`, the same image production uses. The suite s
 make deploy
 ```
 
-Builds `linux/amd64`, pushes to `gcr.io/timetable-252615/timetable-offline`, and rolls the new image out to Cloud Run — then prints the service URL and the revision that ended up live. Pushing the image alone does **not** deploy it; the service keeps serving its current revision until `gcloud run deploy` runs.
+Builds `linux/amd64`, pushes to `europe-north1-docker.pkg.dev/timetable-252615/timetable/timetable-offline`, and rolls the new image out to Cloud Run — then prints the service URL and the revision that ended up live. Pushing the image alone does **not** deploy it; the service keeps serving its current revision until `gcloud run deploy` runs.
 
 Roll back to a previous revision:
 
