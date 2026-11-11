@@ -2817,11 +2817,11 @@ ENG_NAMES = [
     },
     {
       "code": 715,
-      "eng_name": "Post Office № 21"
+      "eng_name": "Post Office #21"
     },
     {
       "code": 716,
-      "eng_name": "Post Office № 21"
+      "eng_name": "Post Office #21"
     },
     {
       "code": 717,

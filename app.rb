@@ -28,9 +28,9 @@ end
 # "Sakharova" in the table). The table is only a fallback for stops the API has
 # no translation for, and stops in neither get an empty string rather than a 500.
 def eng_name_for(code, api_name)
-  return api_name unless api_name.to_s.strip.empty?
-
-  ENG_NAMES_BY_CODE[code.to_i] || ''
+  name = api_name.to_s.strip.empty? ? (ENG_NAMES_BY_CODE[code.to_i] || '') : api_name
+  # English labels spell numbers "#5", not the Cyrillic-style "№ 5" the API sends.
+  name.gsub(/\s*№\s*/, ' #').strip
 end
 
 def detect_layout(transfers)
