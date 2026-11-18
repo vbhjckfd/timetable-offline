@@ -5,7 +5,7 @@
 [![Ruby](https://img.shields.io/badge/ruby-3.3-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
 [![Sinatra](https://img.shields.io/badge/sinatra-4.2-000000)](https://sinatrarb.com/)
 [![Cloud Run](https://img.shields.io/badge/deploy-Cloud%20Run-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
-[![License: WTFPL](https://img.shields.io/badge/license-WTFPL-brightgreen)](http://www.wtfpl.net/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 
 🔗 Live at **[offline.lad.lviv.ua](https://offline.lad.lviv.ua/80)** · data from **[api.lad.lviv.ua](https://api.lad.lviv.ua)**
 
@@ -152,7 +152,7 @@ Route names arrive in Cyrillic and have to map onto icon filenames. `А03` → `
 
 ## 📜 License
 
-[WTFPL](http://www.wtfpl.net/) — do what the fuck you want to.
+[MIT](LICENSE).
 
 Two things in this repo are **not** covered by that, because they were never mine to relicense:
 
