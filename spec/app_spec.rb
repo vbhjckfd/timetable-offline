@@ -280,6 +280,14 @@ RSpec.describe App do
   # ── GET /:code/schema ───────────────────────────────────────────────────────
 
   describe 'GET /:code/schema' do
+    # The drawing is 8-16 MB of SVG; Cloud Run bills egress on what leaves the origin.
+    it 'gzips the drawing when the client accepts it' do
+      stub_stop(body: valid_body)
+      get "/#{STOP_CODE}/schema", {}, 'HTTP_ACCEPT_ENCODING' => 'gzip'
+      expect(last_response.headers['content-encoding']).to eq('gzip')
+      expect(Zlib.gunzip(last_response.body)).to include('id="stop-qr"')
+    end
+
     it 'carries the QR code to the stop page' do
       stub_stop(body: valid_body)
       get "/#{STOP_CODE}/schema"

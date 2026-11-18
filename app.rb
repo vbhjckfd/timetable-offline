@@ -287,6 +287,10 @@ class App < Sinatra::Base
   API_OPEN_TIMEOUT = 3
   API_READ_TIMEOUT = 8
 
+  # The schema SVG is 8-16 MB raw, ~2.5 MB gzipped; Cloud Run bills egress on
+  # the bytes leaving the origin, before Cloudflare's own compression.
+  use Rack::Deflater
+
   configure do
     set :server, :puma
     set :bind, '0.0.0.0'
