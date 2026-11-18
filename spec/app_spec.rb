@@ -47,11 +47,12 @@ RSpec.describe App do
         expect(last_response.headers['X-Robots-Tag']).to eq('noindex, nofollow')
       end
 
-      # The query params make a stale sticker easy to hit, and Cloudflare's
-      # bypass rule lives outside this repo.
-      it 'sets Cache-Control: no-store' do
+      # Cached at Cloudflare per full URL (query string included) and purged
+      # with the `short` tag on every data refresh.
+      it 'lets Cloudflare cache it for a day under the short tag' do
         get "/#{STOP_CODE}"
-        expect(last_response.headers['Cache-Control']).to include('no-store')
+        expect(last_response.headers['Cache-Control']).to eq('public, max-age=0, s-maxage=86400, stale-while-revalidate=86400')
+        expect(last_response.headers['Cache-Tag']).to eq('short')
       end
 
       it 'renders an SVG document' do
@@ -373,9 +374,18 @@ RSpec.describe App do
         expect(last_response.headers['X-Robots-Tag']).to eq('noindex, nofollow')
       end
 
-      it 'sets Cache-Control: no-store' do
+      it 'lets Cloudflare cache it for a day under the short tag' do
         get "/#{STOP_CODE}/schema"
+        expect(last_response.headers['Cache-Control']).to include('s-maxage=86400')
+        expect(last_response.headers['Cache-Tag']).to eq('short')
+      end
+
+      it 'does not cache an unknown stop' do
+        stub_stop(body: '{}', status: 404)
+        get "/#{STOP_CODE}/schema"
+        expect(last_response.status).to eq(404)
         expect(last_response.headers['Cache-Control']).to include('no-store')
+        expect(last_response.headers['Cache-Tag']).to be_nil
       end
 
       it 'renders an SVG document' do

@@ -298,13 +298,19 @@ class App < Sinatra::Base
 
   before do
     headers 'X-Robots-Tag' => 'noindex, nofollow'
-    # Cloudflare bypasses these today, but only because of a rule that lives
-    # outside this repo; the query params make a stale sticker easy to hit, so
-    # say it here rather than rely on that.
+    # Errors stay uncached; a rendered drawing opts in with cache_at_edge.
     cache_control :no_store
   end
 
   helpers do
+    # Cloudflare keys on the full URL, so each ?only/add/remove/fade variant is
+    # its own entry. The daily data refresh purges the `short` tag zone-wide,
+    # so a drawing never outlives the stop data it was drawn from.
+    def cache_at_edge
+      headers 'Cache-Control' => 'public, max-age=0, s-maxage=86400, stale-while-revalidate=86400',
+              'Cache-Tag' => 'short'
+    end
+
     def qr_svg(stop_code)
       RQRCode::QRCode.new("https://lad.lviv.ua/#{stop_code}").as_svg(
         offset: 0,
@@ -348,6 +354,7 @@ class App < Sinatra::Base
     stop_code = params['code']
 
     data = load_stop(stop_code)
+    cache_at_edge
     data = apply_route_overrides(data, only: params['only'], add: params['add'], remove: params['remove'])
     transfers = get_transfers(data)
 
@@ -371,6 +378,7 @@ class App < Sinatra::Base
     stop_code = params['code']
 
     data = load_stop(stop_code)
+    cache_at_edge
     data['name_en'] = eng_name_for(stop_code, data['eng_name'])
 
     erb :panel,
@@ -420,6 +428,7 @@ class App < Sinatra::Base
     stop_code = params['code']
 
     data = load_stop(stop_code)
+    cache_at_edge
     data = apply_route_overrides(data, only: params['only'], add: params['add'], remove: params['remove'])
     transfers = get_transfers(data)
 
