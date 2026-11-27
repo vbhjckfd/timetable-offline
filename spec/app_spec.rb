@@ -112,7 +112,13 @@ RSpec.describe App do
         get "/#{STOP_CODE}"
         expect(last_response.status).to eq(200)
         expect(last_response.body).to include('<svg')
-        expect(last_response.body).to include('/icons/t25.svg')
+        expect(last_response.body).to include(icon('t25'))
+      end
+
+      # A sign shown through <img> (the stop list preview) loads nothing external.
+      it 'embeds route icons instead of linking them' do
+        get "/#{STOP_CODE}"
+        expect(last_response.body).not_to include('xlink:href="/icons/')
       end
     end
 
@@ -148,7 +154,7 @@ RSpec.describe App do
       it 'renders all 22 route icons' do
         get "/#{STOP_CODE}"
         # Routes 1-6 normalise to 1a-6a, the rest keep their bare number.
-        expect(last_response.body.scan(%r{/icons/\d+[a-z]?\.svg}).length).to eq(22)
+        expect(last_response.body.scan('<image xlink:href="data:image/svg+xml').length).to eq(22)
       end
 
       it 'places the 22nd route on a 4th row clear of the QR block at y 3172' do
@@ -222,27 +228,27 @@ RSpec.describe App do
 
     it 'drops a removed route from the sticker' do
       get "/#{STOP_CODE}?remove=T03"
-      expect(last_response.body).to include('/icons/46.svg')
-      expect(last_response.body).not_to include('/icons/t3.svg')
+      expect(last_response.body).to include(icon('46'))
+      expect(last_response.body).not_to include(icon('t3'))
     end
 
     it 'draws an added route on the sticker' do
       get "/#{STOP_CODE}?add=T02"
-      expect(last_response.body).to include('/icons/t2.svg')
+      expect(last_response.body).to include(icon('t2'))
     end
 
     it 'applies both params at once' do
       get "/#{STOP_CODE}?add=A47,T02&remove=T03,A46"
-      expect(last_response.body).to include('/icons/47a.svg')
-      expect(last_response.body).to include('/icons/t2.svg')
-      expect(last_response.body).not_to include('/icons/46.svg')
-      expect(last_response.body).not_to include('/icons/t3.svg')
+      expect(last_response.body).to include(icon('47a'))
+      expect(last_response.body).to include(icon('t2'))
+      expect(last_response.body).not_to include(icon('46'))
+      expect(last_response.body).not_to include(icon('t3'))
     end
 
     it 'applies the overrides to the schema too' do
       get "/#{STOP_CODE}/schema?add=T02&remove=T03"
-      expect(last_response.body).to include('/icons/t2.svg')
-      expect(last_response.body).not_to include('/icons/t3.svg')
+      expect(last_response.body).to include(icon('t2'))
+      expect(last_response.body).not_to include(icon('t3'))
     end
 
     it 'renders a stop stripped down to a single route' do
@@ -259,22 +265,22 @@ RSpec.describe App do
 
     it 'keeps only the listed routes' do
       get "/#{STOP_CODE}?only=T03"
-      expect(last_response.body).to include('/icons/t3.svg')
-      expect(last_response.body).not_to include('/icons/46.svg')
+      expect(last_response.body).to include(icon('t3'))
+      expect(last_response.body).not_to include(icon('46'))
     end
 
     it 'draws a listed route the stop does not serve' do
       get "/#{STOP_CODE}?only=A46,T02"
-      expect(last_response.body).to include('/icons/46.svg')
-      expect(last_response.body).to include('/icons/t2.svg')
-      expect(last_response.body).not_to include('/icons/t3.svg')
+      expect(last_response.body).to include(icon('46'))
+      expect(last_response.body).to include(icon('t2'))
+      expect(last_response.body).not_to include(icon('t3'))
     end
 
     it 'applies only alongside add on the schema' do
       get "/#{STOP_CODE}/schema?only=A46&add=T02"
-      expect(last_response.body).to include('/icons/46.svg')
-      expect(last_response.body).to include('/icons/t2.svg')
-      expect(last_response.body).not_to include('/icons/t3.svg')
+      expect(last_response.body).to include(icon('46'))
+      expect(last_response.body).to include(icon('t2'))
+      expect(last_response.body).not_to include(icon('t3'))
     end
   end
 
@@ -681,7 +687,7 @@ RSpec.describe App do
         body: { 'transfers' => [{ 'route' => 'Т25', 'vehicle_type' => 'trolleybus', 'color' => '#E85222' },
                                 { 'route' => 'А03', 'vehicle_type' => 'bus', 'color' => '#0E4F96' }] }.to_json)
       get "/#{STOP_CODE}/schedule"
-      expect(last_response.body).to include('stroke="#919191"', 'fill="#E85222"', 'ico-trolleybus')
+      expect(last_response.body).to include('stroke="#919191"', 'fill="#E85222"', icon('ico-trolleybus'))
       expect(last_response.body).not_to include('#0E4F95', '#0E4F96')
       expect(a_request(:get, "#{API_BASE}/stops/39/static")).not_to have_been_made
       expect(a_request(:get, "#{API_BASE}/stops/500/static")).not_to have_been_made

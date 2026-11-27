@@ -10551,7 +10551,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
     <path class="fil30" d="M425.85 1141.07l-134.64 0c-8.42,0 -15.26,6.83 -15.26,15.27l0 134.62c0,8.43 6.84,15.28 15.26,15.28l4.72 0 0 5.87c0,7.71 6.26,13.98 13.99,13.98l1.64 0c7.72,0 13.98,-6.27 13.98,-13.98l0 -5.87 67.32 0 0 5.87c0,7.71 6.26,13.98 14,13.98l1.63 0c7.73,0 14,-6.27 14,-13.98l0 -5.87 3.36 0c8.42,0 15.26,-6.85 15.26,-15.28l0 -134.62c0,-8.44 -6.84,-15.27 -15.26,-15.27zm-120.06 148.11c-5.94,0 -10.76,-4.83 -10.76,-10.77 0,-5.95 4.82,-10.77 10.76,-10.77 5.96,0 10.78,4.82 10.78,10.77 0,5.94 -4.82,10.77 -10.78,10.77zm105.24 0c-5.94,0 -10.77,-4.83 -10.77,-10.77 0,-5.95 4.83,-10.77 10.77,-10.77 5.96,0 10.78,4.82 10.78,10.77 0,5.94 -4.82,10.77 -10.78,10.77zm10.78 -32.31l-126.57 0 0 -96.95 126.57 0 0 96.95z"/>
 
     <% transfers[:bus].each_with_index do |r, index| %>
-        <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= 266 %>" y="<%= 1466 + index * 232  %>" width="184" height="184"/>
+        <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= 266 %>" y="<%= 1466 + index * 232  %>" width="184" height="184"/>
     <% end %>
   </g>
   <% end %>
@@ -10565,7 +10565,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
     <path class="fil49" d="M741.03 1312.35l-24.99 0 36.35 36.33c1.71,1.71 3.95,2.57 6.2,2.58l0.04 0c2.24,-0.01 4.49,-0.87 6.2,-2.58 3.43,-3.43 3.43,-9 0,-12.44l0 0 -23.8 -23.89z"/>
 
     <% transfers[:tram].each_with_index do |r, index| %>
-        <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= 585 %>" y="<%= 1466 + index * 232  %>" width="202" height="202"/>
+        <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= 585 %>" y="<%= 1466 + index * 232  %>" width="202" height="202"/>
     <% end %>
   </g>
   <% end %>
@@ -10575,7 +10575,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
     <path class="fil30" d="M1092.02 1141.22l-134.75 0c-8.44,0 -15.28,6.84 -15.28,15.28l0 134.74c0,8.44 6.84,15.29 15.28,15.29l4.72 0 0 5.88c0,7.72 6.26,14 14.01,14l1.63 0c7.73,0 14,-6.28 14,-14l0 -5.88 67.37 0 0 5.88c0,7.72 6.27,14 14.02,14l1.63 0c7.74,0 14,-6.28 14,-14l0 -5.88 3.37 0c8.43,0 15.28,-6.85 15.28,-15.29l0 -134.74c0,-8.44 -6.85,-15.28 -15.28,-15.28zm-120.16 148.24c-5.95,0 -10.77,-4.84 -10.77,-10.78 0,-5.96 4.82,-10.78 10.77,-10.78 5.96,0 10.79,4.82 10.79,10.78 0,5.94 -4.83,10.78 -10.79,10.78zm105.33 0c-5.95,0 -10.78,-4.84 -10.78,-10.78 0,-5.96 4.83,-10.78 10.78,-10.78 5.96,0 10.78,4.82 10.78,10.78 0,5.94 -4.82,10.78 -10.78,10.78zm10.78 -32.34l-126.67 0 0 -97.03 126.67 0 0 97.03zm-77.87 -131.03l-28.05 0 40.29 -40.29c3.89,-3.9 10.17,-3.9 14.04,0 3.87,3.86 3.87,10.15 0,14.03l-26.28 26.26zm25.73 0l40.29 -40.29c3.89,-3.9 10.17,-3.9 14.04,0 3.87,3.86 3.87,10.15 0,14.03l-26.28 26.26 -28.05 0 0 0z"/>
 
     <% transfers[:trol].each_with_index do |r, index| %>
-        <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= 948 %>" y="<%= 1466 + index * 232  %>" width="152" height="152"/>
+        <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= 948 %>" y="<%= 1466 + index * 232  %>" width="152" height="152"/>
     <% end %>
   </g>
   <% end %>
@@ -10588,7 +10588,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
     <path class="fil30" d="M1570.73 1104.46c-6.65,27.13 -31.12,47.26 -60.3,47.26 -34.29,0 -62.08,-27.79 -62.08,-62.08 0,-29.18 20.13,-53.65 47.26,-60.3 -14.06,9.75 -23.27,26 -23.27,44.4 0,29.82 24.17,53.99 53.99,53.99 18.4,0 34.65,-9.21 44.4,-23.27z"/>
 
     <% transfers[:night].each_with_index do |r, index| %>
-        <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= 1376 - 92 %>" y="<%= 1466 + index * 232  %>" width="185" height="185"/>
+        <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= 1376 - 92 %>" y="<%= 1466 + index * 232  %>" width="185" height="185"/>
     <% end %>
   </g>
   <% end %>
@@ -10613,7 +10613,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
 
     <% transfers[:tram].each_with_index do |r, index| %>
     <g>
-        <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= 7141.71 %>" y="<%= 976.63 + index * 119.87  %>" width="73.82" height="73.82" />
+        <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= 7141.71 %>" y="<%= 976.63 + index * 119.87  %>" width="73.82" height="73.82" />
 
         <text x="7231.69" y="<%= 1012.07 + index * 119.87  %>"  class="fil31 fnt37"><%= r['end_stop_name'] %></text>
         <text x="7231.69" y="<%= 1058.95 + index * 119.87  %>"  class="fil31 fnt38"><%= r['eng_end_stop_name'] %></text>
@@ -10639,7 +10639,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
 
     <% transfers[:trol].each_with_index do |r, index| %>
     <g>
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= 7141.71 %>" y="<%= 1487 + index * 119.87  %>" width="73.82" height="73.82" />
+          <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= 7141.71 %>" y="<%= 1487 + index * 119.87  %>" width="73.82" height="73.82" />
 
           <text x="7231.69" y="<%= 1523 + index * 119.87  %>"  class="fil31 fnt37"><%= r['end_stop_name'] %></text>
           <text x="7231.69" y="<%= 1570 + index * 119.87  %>"  class="fil31 fnt38"><%= r['eng_end_stop_name'] %></text>
@@ -10659,7 +10659,7 @@ PJQK8dgnyTAAAAAASUVORK5CYII="/>
 
     <% transfers[:bus].each_with_index do |r, index| %>
     <g>
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= 7141.71 %>" y="<%= 1879 + index * 119.87  %>" width="73.82" height="73.82" />
+          <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= 7141.71 %>" y="<%= 1879 + index * 119.87  %>" width="73.82" height="73.82" />
 
           <text x="7229.7" y="<%= 1914 + index * 119.87  %>"  class="fil31 fnt37"><%= r['end_stop_name'] %></text>
           <text x="7229.7" y="<%= 1961 + index * 119.87  %>"  class="fil31 fnt38"><%= r['eng_end_stop_name'] %></text>

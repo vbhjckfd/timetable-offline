@@ -174,6 +174,10 @@ MAP_STOP_PINS = JSON.parse(File.read(File.join(__dir__, 'data', 'map_stop_pins.j
 
 ELECTRIC_TYPES = %w[tram trolleybus trol].freeze
 
+ICON_HREFS = Dir[File.join(__dir__, 'public', 'icons', '*.svg')].to_h do |path|
+  [File.basename(path, '.svg'), "data:image/svg+xml;base64,#{Base64.strict_encode64(File.binread(path))}"]
+end.freeze
+
 # The drawing's tram (1-9) and trolleybus (22-38) lines, keyed by the colour each is drawn
 # in, as tools/extract_map_labels.py reads them. A line's stroke and its end badge's fill
 # differ by a shade, so every colour the route groups use is matched to the nearest here.
@@ -395,6 +399,12 @@ class App < Sinatra::Base
     def cache_at_edge
       headers 'Cache-Control' => 'public, max-age=0, s-maxage=86400, stale-while-revalidate=86400',
               'Cache-Tag' => 'short'
+    end
+
+    # Inlined, not linked: an SVG shown through <img> or saved to disk loads
+    # nothing external, so a linked icon would vanish. Unknown names keep the link.
+    def icon_href(name)
+      ICON_HREFS.fetch(name.to_s) { "/icons/#{ERB::Util.url_encode(name)}.svg" }
     end
 
     def qr_svg(stop_code)

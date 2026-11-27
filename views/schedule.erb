@@ -99,8 +99,8 @@ viewBox="0 0 3508 2480.4"
   </style>
  </defs>
  <g>
-  <image xlink:href="/icons/<%= e.(route['route_normalized']) %>.svg" x="47" y="108" width="236" height="236"/>
-  <image xlink:href="/icons/<%= pictogram %>.svg" x="440" y="100" width="140" height="210"/>
+  <image xlink:href="<%= icon_href(e.(route['route_normalized'])) %>" x="47" y="108" width="236" height="236"/>
+  <image xlink:href="<%= icon_href(pictogram) %>" x="440" y="100" width="140" height="210"/>
   <text x="661.15" y="217.42" class="fil3" style="font-size:<%= (100 * title_scale).round(2) %>px"><%= e.(data['name']) %></text>
   <% unless title_en.empty? %>
   <text x="661.15" y="302.25" class="fil4" style="font-size:<%= (75 * title_scale).round(2) %>px"><%= e.(title_en) %></text>
@@ -153,7 +153,7 @@ viewBox="0 0 3508 2480.4"
   <g transform="translate(<%= (left - 14.76).round(2) %> <%= cy %>) scale(<%= text_scale.round(4) %>)">
    <line x1="-6" y1="0" x2="-24.4" y2="0" stroke="#9DA7B3" stroke-width="2.36" stroke-dasharray="2.36 2.36"/>
    <% x = -26.2; groups.each do |type, ts| icon, w = pictograms[type] %>
-   <image xlink:href="/icons/<%= icon %>.svg" x="<%= (x - w).round(2) %>" y="-38" width="<%= w %>" height="68" preserveAspectRatio="xMidYMax meet"/>
+   <image xlink:href="<%= icon_href(icon) %>" x="<%= (x - w).round(2) %>" y="-38" width="<%= w %>" height="68" preserveAspectRatio="xMidYMax meet"/>
    <% x -= w + 8.6; ts.first(6).each do |t| %>
    <g transform="translate(<%= (x - 25.38).round(2) %> 3.7)"><%= badge.(t) %></g>
    <% x -= 59.06; end; x -= 8 %>

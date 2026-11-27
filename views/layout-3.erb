@@ -44,7 +44,7 @@ viewBox="0 0 5906 4134.2"
   <% xs = [1548.26, 2987.75, 4427.23] %>
   <% transfers.values.flatten.each_with_index do |r, index| %>
 
-  <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[index] %>" y="1001.8" width="1122.14" height="1122.14" />
+  <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= xs[index] %>" y="1001.8" width="1122.14" height="1122.14" />
 
   <% end %>
   </g>

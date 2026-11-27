@@ -16,3 +16,8 @@ RSpec.configure do |config|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
   end
 end
+
+# How a rendered drawing embeds public/icons/<name>.svg.
+def icon(name)
+  "data:image/svg+xml;base64,#{Base64.strict_encode64(File.binread(File.join(__dir__, '..', 'public', 'icons', "#{name}.svg")))}"
+end

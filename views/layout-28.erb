@@ -72,11 +72,11 @@
         <path class="fil12" d="M364.95 772.15l-61.73 61.96c-8.91,8.91 -8.91,23.35 0,32.26 8.92,8.91 23.36,8.91 32.27,0l94.28 -94.22 -64.82 0z"/>
         <path class="fil12" d="M639.1 772.15l-64.83 0 94.29 94.23c4.44,4.44 10.26,6.67 16.08,6.68l0.11 0c5.82,-0.01 11.64,-2.24 16.08,-6.68 8.91,-8.91 8.91,-23.35 0,-32.26l0 0 -61.73 -61.97z"/>
       <% elsif transfers[:trol] %>
-        <image xlink:href="/icons/ico-trolleybus.svg" x="287.8000183105469" y="236.26" width="428.4" height="631.51"/>
+        <image xlink:href="<%= icon_href('ico-trolleybus') %>\" x="287.8000183105469" y="236.26" width="428.4" height="631.51"/>
       <% end %>
 
       <% let_transport.each_with_index do |r, index| %>
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[[index, xs.length - 1].min] - 295.28 %>" y="<%= 531.54 - 295.28 %>" width="590.53" height="590.53"/>
+          <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= xs[[index, xs.length - 1].min] - 295.28 %>" y="<%= 531.54 - 295.28 %>" width="590.53" height="590.53"/>
       <% end %>
     </g>
   <% end %>
@@ -93,7 +93,7 @@
           <% row_number = [(index / 7).to_i, bus_y.length - 1].min %>
           <% col_number = index % 7; %>
 
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[col_number] - 295.28 %>" y="<%= bus_y[row_number] - 295.28 %>" width="590.53" height="590.53"/>
+          <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= xs[col_number] - 295.28 %>" y="<%= bus_y[row_number] - 295.28 %>" width="590.53" height="590.53"/>
       <% end %>
     </g>
   <% end %>
@@ -104,7 +104,7 @@
       <path class="fil1" d="M941.34 2394.76c-14.21,58.03 -66.56,101.09 -128.97,101.09 -73.33,0 -132.78,-59.45 -132.78,-132.78 0,-62.41 43.06,-114.76 101.09,-128.97 -30.07,20.84 -49.77,55.6 -49.77,94.95 0,63.78 51.7,115.48 115.47,115.48 39.36,0 74.11,-19.7 94.96,-49.77z"/>
 
       <% transfers[:night].each_with_index do |r, index| %>
-          <image xlink:href="/icons/<%= r['route_normalized'] %>.svg" x="<%= xs[[index, xs.length - 1].min] - 295.28 %>" y="<%= 2663.59 - 295.28 %>" width="590.53" height="590.53"/>
+          <image xlink:href="<%= icon_href(r['route_normalized']) %>" x="<%= xs[[index, xs.length - 1].min] - 295.28 %>" y="<%= 2663.59 - 295.28 %>" width="590.53" height="590.53"/>
       <% end %>
 
     </g>
