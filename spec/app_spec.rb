@@ -632,4 +632,44 @@ RSpec.describe App do
       expect(last_response.body).to include('lad.lviv.ua')
     end
   end
+
+  # ── GET /:code/schedule ─────────────────────────────────────────────────────
+
+  describe 'GET /:code/schedule' do
+    def route_stop(code, name, lat, times = nil)
+      { 'code' => code, 'name' => name, 'loc' => [lat, 24.0], 'transfers' => [],
+        'schedule' => times ? { 'workday' => times, 'weekend' => ['07:15'] } : {} }
+    end
+
+    def stub_route(id, stops)
+      stub_request(:get, "#{API_BASE}/routes/static/#{id}")
+        .to_return(status: 200, body: { 'stops' => [stops] }.to_json,
+                   headers: { 'Content-Type' => 'application/json' })
+    end
+
+    let(:transfers) { [{ 'id' => 7, 'route' => 'Т03', 'vehicle_type' => 'tram', 'direction_id' => 0, 'color' => '#50B056' }] }
+
+    before { stub_stop(body: valid_body(transfers: transfers)) }
+
+    it 'renders departures and minutes to the next stop' do
+      stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13 06:25 23:50]),
+                     route_stop(81, 'Наступна', 49.8043)])
+      get "/#{STOP_CODE}/schedule"
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('image/svg+xml')
+      expect(last_response.body).to include('Наступна', '>13<', '>25<', '>50<')
+    end
+
+    it 'filters by ?route=' do
+      stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13]), route_stop(81, 'Наступна', 49.8043)])
+      get "/#{STOP_CODE}/schedule", route: 'Т99'
+      expect(last_response.status).to eq(404)
+    end
+
+    it '404s when the stop is not a terminal of the route' do
+      stub_route(7, [route_stop(79, 'Перша', 49.79, %w[06:13]), route_stop(80, 'Стрийський ринок', 49.8)])
+      get "/#{STOP_CODE}/schedule"
+      expect(last_response.status).to eq(404)
+    end
+  end
 end

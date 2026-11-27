@@ -281,6 +281,45 @@ def route_tokens(value)
   value.to_s.split(',').map(&:strip).reject(&:empty?)
 end
 
+# The API has no running times between stops, so each stop's minutes from the one the sheet
+# is for come from the straight-line distance along the route.
+# shortcut: 215 m/min is fitted to the city's Т03 sheet and ignores road curvature and
+# dwell time, swap in real running times if the API ever carries them.
+METRES_PER_MINUTE = 215.0
+
+def metres_between(a, b)
+  rad = Math::PI / 180
+  dlat = (b[0] - a[0]) * rad
+  dlon = (b[1] - a[1]) * rad
+  h = Math.sin(dlat / 2)**2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dlon / 2)**2
+  12_742_000 * Math.asin(Math.sqrt(h))
+end
+
+# A stop sheet for one route: the stops from this one to the end of the line with minutes
+# to each, and the departures from here, split into workday and weekend by hour. nil when
+# the route does not leave from this stop, as the API carries departures only for a line's
+# terminal stops.
+def schedule_for(stop_code, transfer, route)
+  stops = Array(route['stops'][transfer['direction_id'].to_i])
+  at = stops.index { |s| s['code'].to_i == stop_code.to_i }
+  return nil if at.nil?
+
+  departures = %w[workday weekend].to_h do |day|
+    by_hour = Array(stops[at].dig('schedule', day)).group_by { |t| t[0, 2].to_i }
+    [day, by_hour.transform_values { |ts| ts.map { |t| t[3, 2].to_i }.sort }]
+  end
+  return nil if departures.values.all?(&:empty?)
+
+  walked = 0.0
+  next_stops = stops[at..].each_cons(2).map do |from, to|
+    walked += metres_between(from['loc'], to['loc'])
+    { 'name' => to['name'], 'code' => to['code'], 'minutes' => [1, (walked / METRES_PER_MINUTE).round].max,
+      'transfers' => Array(to['transfers']) }
+  end
+
+  { departures: departures, next_stops: next_stops }
+end
+
 class App < Sinatra::Base
   # Cloud Run gives the whole request 15s, and rendering the schema SVG is not
   # free, so the upstream call has to give up well before that.
@@ -321,31 +360,39 @@ class App < Sinatra::Base
       ).to_s.sub('<?xml version="1.0" standalone="yes"?>', '')
     end
 
-    def load_stop(stop_code)
-      api_url = ENV['API_URL'] || 'https://api.lad.lviv.ua'
-      # url_encode, not raw interpolation: Sinatra decodes %2F after matching
-      # :code, so an unescaped code can climb out of the /stops/ path.
-      url = "#{api_url}/stops/#{ERB::Util.url_encode(stop_code)}/static"
-
-      begin
-        response = Faraday.get(url) do |req|
-          req.options.open_timeout = API_OPEN_TIMEOUT
-          req.options.timeout = API_READ_TIMEOUT
-        end
-      rescue Faraday::Error => e
-        warn "upstream request failed for stop #{stop_code}: #{e.class}: #{e.message}"
-        halt 503, 'Сервіс тимчасово недоступний'
+    # path is built by the caller from url_encode'd parts: Sinatra decodes %2F after
+    # matching :code, so an unescaped one can climb out of the path.
+    def api_get(path)
+      Faraday.get("#{ENV['API_URL'] || 'https://api.lad.lviv.ua'}#{path}") do |req|
+        req.options.open_timeout = API_OPEN_TIMEOUT
+        req.options.timeout = API_READ_TIMEOUT
       end
+    rescue Faraday::Error => e
+      warn "upstream request failed for #{path}: #{e.class}: #{e.message}"
+      halt 503, 'Сервіс тимчасово недоступний'
+    end
+
+    def parse_api_json(response)
+      JSON.parse(response.body)
+    rescue JSON::ParserError
+      halt 503
+    end
+
+    def load_stop(stop_code)
+      response = api_get("/stops/#{ERB::Util.url_encode(stop_code)}/static")
 
       halt 400, 'Код зупинки має бути числом, на кшталт 128' if response.status == 400
       halt 404, erb(:not_found, layout: false, content_type: 'text/html') if response.status == 404
       halt 503, 'Сервіс тимчасово недоступний' unless response.success?
 
-      begin
-        JSON.parse(response.body)
-      rescue JSON::ParserError
-        halt 503
-      end
+      parse_api_json(response)
+    end
+
+    def load_route(route_id)
+      response = api_get("/routes/static/#{ERB::Util.url_encode(route_id)}")
+      halt 503, 'Сервіс тимчасово недоступний' unless response.success?
+
+      parse_api_json(response)
     end
   end
 
@@ -388,6 +435,36 @@ class App < Sinatra::Base
       width: params['length'].to_s == '4' ? 3000 : 4000,
       qrcode: qr_svg(stop_code)
     },
+    content_type: 'image/svg+xml'
+  end
+
+  # The departures sheet for one route from this stop (?route=Т03, else the first route
+  # with departures here): hours by minutes for workdays and weekends, and the stops
+  # ahead with minutes to each. The API lists departures only for a line's terminals.
+  get '/:code/schedule' do
+    stop_code = params['code']
+
+    data = load_stop(stop_code)
+    cache_at_edge
+    wanted = params['route'].to_s.strip.empty? ? nil : normalize_route_name(params['route'])
+
+    sheet = nil
+    Array(data['transfers']).each do |t|
+      next if wanted && normalize_route_name(t['route']) != wanted
+
+      sheet = schedule_for(data['code'] || stop_code, t, load_route(t['id']))
+      if sheet
+        t['route_normalized'] = normalize_route_name(t['route'])
+        sheet[:transfer] = t
+        break
+      end
+    end
+    halt 404, 'Для цієї зупинки немає розкладу відправлень' unless sheet
+
+    data['name_en'] = eng_name_for(stop_code, data['eng_name'])
+
+    erb :schedule,
+    :locals => { data: data, sheet: sheet },
     content_type: 'image/svg+xml'
   end
 

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<%
+  # A4 landscape at 300 dpi, drawn on the city's CorelDRAW sheet for a route's first stop:
+  # hours by minutes for workdays and weekends on the left, the stops ahead with minutes to
+  # each on the right. Positions are the sheet's own.
+  e = ->(s) { ERB::Util.html_escape(s.to_s) }
+  route = sheet[:transfer]
+  color = route['color'] || '#50B056'
+  stops = sheet[:next_stops]
+
+  pictogram = case route['vehicle_type']
+              when 'tram' then 'ico-tram'
+              when 'trolleybus' then 'ico-trolleybus'
+              else route['route_normalized'].start_with?('n') ? 'ico-nightbus' : 'ico-bus'
+              end
+
+  title_scale = [1.0, 2100 / natgrotesk_width(data['name'], 100)].min
+  title_en = data['name_en'].to_s
+  title_en = '' if title_en == data['name'].to_s
+
+  # Rows run over every hour either column has; the small hours after midnight sort last.
+  hour_order = ->(h) { h < 4 ? h + 24 : h }
+  hours = sheet[:departures].values.flat_map(&:keys)
+  first_hour, last_hour = hours.map(&hour_order).minmax
+  rows = (first_hour..last_hour).to_a
+  row_step = [87.5, 1487.5 / [rows.length - 1, 1].max].min
+  # A column with more minutes in an hour than the sheet's nine narrows them to fit.
+  per_hour = sheet[:departures].values.flat_map { |by_hour| by_hour.values.map(&:length) }.max
+  minute_step = [94.85, 890.0 / per_hour].min
+  minute_size = 58.33 * minute_step / 94.85
+
+  columns = [
+    { day: 'workday', ua: 'Робочі дні', en: 'Working days', dx: 0, divider: 346.78, rule: [251.0, 1275.0] },
+    { day: 'weekend', ua: 'Вихідні', en: 'Weekend', dx: 1129.5, divider: 1480.68, rule: [1385.0, 2409.0] }
+  ]
+
+  # The stop list: the sheet's 186 px between names, squeezed (with the text) for long lines.
+  pitch = [186.12, 1675.14 / [stops.length - 1, 1].max].min
+  text_scale = pitch / 186.12
+  line_end = 409.19 + pitch * (stops.length - 1)
+  name_room = 3480 - 2869.92
+  badge_label = ->(r) { %w[tram trolleybus].include?(r['vehicle_type']) ? r['route'].to_s.sub(/\A[ТтTt]0*/, '') : r['route'].to_s }
+%>
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="3508px" height="2480px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 3508 2480.4"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    <%= erb :fonts %>
+    @font-face { font-family: "NatGrotesk"; font-weight: normal; font-style: normal; src: url("data:font/otf;base64,<%= NATGROTESK_OTF %>") format("opentype"); }
+    text { font-family: 'NatGrotesk', 'Myriad Pro', sans-serif; }
+    .hour {font-family:'MyriadPro-Semibold', 'NatGrotesk', sans-serif; font-size:58.33px}
+    .str0 {stroke:#9DA7B3;stroke-width:2.36;stroke-miterlimit:22.9256}
+    .str1 {stroke:#9DA7B3;stroke-width:2.36;stroke-miterlimit:22.9256;stroke-dasharray:2.360000 7.090000}
+    .str2 {stroke:#2B2A29;stroke-width:2.36;stroke-miterlimit:22.9256}
+    .str9 {stroke:#2B2A29;stroke-width:4.72;stroke-miterlimit:22.9256}
+    .str11 {stroke:#9DA7B3;stroke-width:0.9;stroke-miterlimit:22.9256}
+    .str13 {stroke:#BDCCDB;stroke-width:0.9;stroke-miterlimit:22.9256}
+    .fil0 {fill:#9DA7B3;fill-rule:nonzero}
+    .fil2 {fill:#FEFEFE}
+    .fil3 {fill:#2B2A29}
+    .fil4 {fill:#9DA7B3}
+    .fil5 {fill:none}
+    .fil6 {fill:#FECD27}
+    .fnt2 {font-size:58.33px}
+    .fnt3 {font-size:45.83px}
+    .fnt5 {font-size:33.33px}
+    .fnt6 {font-weight:300;font-size:75px;font-family:'Bookman Old Style'}
+    .fnt7 {font-size:65.58px}
+    .fnt8 {font-size:37.5px}
+    .fnt9 {font-size:20.83px}
+   ]]>
+  </style>
+ </defs>
+ <g>
+  <image xlink:href="/icons/<%= e.(route['route_normalized']) %>.svg" x="47" y="108" width="236" height="236"/>
+  <image xlink:href="/icons/<%= pictogram %>.svg" x="440" y="100" width="140" height="210"/>
+  <text x="661.15" y="217.42" class="fil3" style="font-size:<%= (100 * title_scale).round(2) %>px"><%= e.(data['name']) %></text>
+  <% unless title_en.empty? %>
+  <text x="661.15" y="302.25" class="fil4" style="font-size:<%= (75 * title_scale).round(2) %>px"><%= e.(title_en) %></text>
+  <% end %>
+  <line class="fil5 str0" x1="140.71" y1="554.97" x2="2408.74" y2="554.97"/>
+
+  <% columns.each do |col| dx = col[:dx] %>
+  <text x="<%= 174.42 + dx %>" y="474.97" class="fil3 fnt2"><%= col[:ua] %></text>
+  <text x="<%= 174.42 + dx %>" y="526.25" class="fil4 fnt3"><%= col[:en] %></text>
+  <text x="<%= 172.43 + dx %>" y="607.94" class="fil3 fnt3">години</text>
+  <text x="<%= 237.23 + dx %>" y="645.93" class="fil4 fnt5">hours</text>
+  <text x="<%= 379.13 + dx %>" y="607.94" class="fil3 fnt3">хвилини</text>
+  <text x="<%= 379.13 + dx %>" y="645.93" class="fil4 fnt5">minutes</text>
+  <line class="fil5 str0" x1="<%= col[:divider] %>" y1="663.41" x2="<%= col[:divider] %>" y2="2228.23"/>
+  <% rows.each_with_index do |h, i| y = (726.13 + row_step * i).round(2) %>
+  <text x="<%= 323 + dx %>" y="<%= y %>" text-anchor="end" class="hour fil3"><%= h % 24 %></text>
+  <% sheet[:departures][col[:day]].fetch(h % 24, []).each_with_index do |m, j| %>
+  <text x="<%= (384.19 + dx + minute_step * j).round(2) %>" y="<%= y %>" class="fil3" style="font-size:<%= minute_size.round(2) %>px"><%= format('%02d', m) %></text>
+  <% end %>
+  <% unless i == rows.length - 1 %>
+  <line class="fil5 str1" x1="<%= col[:rule][0] %>" y1="<%= (y + 11.8).round(2) %>" x2="<%= col[:rule][1] %>" y2="<%= (y + 11.8).round(2) %>"/>
+  <% end %>
+  <% end %>
+  <% end %>
+
+  <line x1="2813.54" y1="221.91" x2="2813.54" y2="<%= line_end.round(2) %>" stroke="<%= e.(color) %>" stroke-width="23.62"/>
+  <rect x="2780" y="207.15" width="48.3" height="29.52" rx="14.76" class="fil2 str9"/>
+  <rect x="2851.46" y="172.51" width="535.57" height="139.01" rx="25.53" ry="23.62" class="fil5 str11"/>
+  <text x="2869.92" y="237.85" class="fil3 fnt2" style="font-size:<%= (58.33 * [1.0, 490 / natgrotesk_width(data['name'], 58.33)].min).round(2) %>px"><%= e.(data['name']) %></text>
+  <% unless title_en.empty? %>
+  <text x="2869.92" y="285.1" class="fil4 fnt3" style="font-size:<%= (45.83 * [1.0, 490 / natgrotesk_width(title_en, 45.83)].min).round(2) %>px"><%= e.(title_en) %></text>
+  <% end %>
+
+  <% stops.each_with_index do |s, i| y = (423.98 + pitch * i).round(2); cy = (y - 14.79).round(2)
+     fit = [1.0, name_room / natgrotesk_width(s['name'], 58.33)].min
+     digits = s['minutes'].to_s.length
+     width = 73.23 + 16.54 * (digits - 1)
+     offset = 34.3 + 17 * (digits - 1)
+     eng = eng_name_for(s['code'], nil) %>
+  <rect x="2780" y="<%= (cy - 14.76).round(2) %>" width="48.3" height="29.52" rx="14.76" class="fil2 str9"/>
+  <% s['transfers'].reject { |t| t['id'] == route['id'] }.first(8).each_with_index do |t, k| %>
+  <g transform="translate(<%= 2735 - 58 * k %> <%= (cy - 25.4).round(2) %>)">
+   <rect width="50.75" height="50.75" rx="8.6" fill="<%= e.(t['color']) %>"/>
+   <text x="25.4" y="34" text-anchor="middle" fill="<%= e.(t['text_color'] || '#FFFFFF') %>" style="font-size:<%= badge_label.(t).length > 2 ? 26 : 34 %>px"><%= e.(badge_label.(t)) %></text>
+  </g>
+  <% end %>
+  <g transform="translate(2869.92 <%= y %>) scale(<%= text_scale.round(4) %>)">
+   <text class="fil3 fnt2" style="font-size:<%= (58.33 * fit).round(2) %>px"><%= e.(s['name']) %></text>
+   <% unless eng.empty? %>
+   <text y="47.25" class="fil4 fnt3" style="font-size:<%= (45.83 * [1.0, name_room / natgrotesk_width(eng, 45.83)].min).round(2) %>px"><%= e.(eng) %></text>
+   <% end %>
+   <g transform="translate(<%= (natgrotesk_width(s['name'], 58.33) * fit + 18).round(2) %> -41.7)">
+    <rect width="<%= width.round(2) %>" height="44.88" rx="3.87" ry="6.21" class="fil5 str13"/>
+    <text x="7.7" y="35.6" class="fil4 fnt8"><%= s['minutes'] %></text>
+    <text x="<%= offset.round(2) %>" y="19.5" class="fil4 fnt9">хв</text>
+    <text x="<%= offset.round(2) %>" y="35.6" class="fil4 fnt9">min</text>
+   </g>
+  </g>
+  <% end %>
+ </g>
+ <%= erb :'schedule-footer' %>
+</svg>
