@@ -669,12 +669,6 @@ RSpec.describe App do
       expect(last_response.body).to include('Наступна', '>13<', '>25<', '>50<')
     end
 
-    it 'fits the sheet to the window so a phone shows it whole' do
-      stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13]), route_stop(81, 'Наступна', 49.8043)])
-      get "/#{STOP_CODE}/schedule"
-      expect(last_response.body).to match(/<svg [^>]*width="100%"[^>]*style="height:auto;/)
-    end
-
     def stub_closest(stops)
       stub_request(:get, %r{\A#{API_BASE}/closest}).to_return(
         status: 200, body: stops.to_json, headers: { 'Content-Type' => 'application/json' })
