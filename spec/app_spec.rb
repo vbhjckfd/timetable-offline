@@ -649,7 +649,10 @@ RSpec.describe App do
 
     let(:transfers) { [{ 'id' => 7, 'route' => 'Т03', 'vehicle_type' => 'tram', 'direction_id' => 0, 'color' => '#50B056' }] }
 
-    before { stub_stop(body: valid_body(transfers: transfers)) }
+    before do
+      stub_stop(body: valid_body(transfers: transfers))
+      stub_closest([])
+    end
 
     it 'renders departures and minutes to the next stop' do
       stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13 06:25 23:50]),
@@ -658,6 +661,37 @@ RSpec.describe App do
       expect(last_response.status).to eq(200)
       expect(last_response.content_type).to include('image/svg+xml')
       expect(last_response.body).to include('Наступна', '>13<', '>25<', '>50<')
+    end
+
+    def stub_closest(stops)
+      stub_request(:get, %r{\A#{API_BASE}/closest}).to_return(
+        status: 200, body: stops.to_json, headers: { 'Content-Type' => 'application/json' })
+    end
+
+    it 'draws same-kind lanes in their colour and nearby other-kind interchanges, never buses' do
+      first = route_stop(80, 'Стрийський ринок', 49.8, %w[06:13])
+      first['transfers'] = [{ 'route' => 'Т08', 'vehicle_type' => 'tram', 'color' => '#919191' },
+                            { 'route' => 'А07', 'vehicle_type' => 'bus', 'color' => '#0E4F95' }]
+      stub_route(7, [first, route_stop(81, 'Наступна', 49.8043)])
+      stub_closest([{ 'code' => 291, 'distance_meters' => 91, 'routes' => %w[Т25 А03] },
+                    { 'code' => 39, 'distance_meters' => 90, 'routes' => %w[А03] },
+                    { 'code' => 500, 'distance_meters' => 400, 'routes' => %w[Т24] }])
+      stub_request(:get, "#{API_BASE}/stops/291/static").to_return(
+        status: 200, headers: { 'Content-Type' => 'application/json' },
+        body: { 'transfers' => [{ 'route' => 'Т25', 'vehicle_type' => 'trolleybus', 'color' => '#E85222' },
+                                { 'route' => 'А03', 'vehicle_type' => 'bus', 'color' => '#0E4F96' }] }.to_json)
+      get "/#{STOP_CODE}/schedule"
+      expect(last_response.body).to include('stroke="#919191"', 'fill="#E85222"', 'ico-trolleybus')
+      expect(last_response.body).not_to include('#0E4F95', '#0E4F96')
+      expect(a_request(:get, "#{API_BASE}/stops/39/static")).not_to have_been_made
+      expect(a_request(:get, "#{API_BASE}/stops/500/static")).not_to have_been_made
+    end
+
+    it 'still renders when the nearby lookup fails' do
+      stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13]), route_stop(81, 'Наступна', 49.8043)])
+      stub_request(:get, %r{\A#{API_BASE}/closest}).to_return(status: 500)
+      get "/#{STOP_CODE}/schedule"
+      expect(last_response.status).to eq(200)
     end
 
     it 'filters by ?route=' do

@@ -40,6 +40,30 @@
   line_end = 409.19 + pitch * (stops.length - 1)
   name_room = 3480 - 2869.92
   badge_label = ->(r) { %w[tram trolleybus].include?(r['vehicle_type']) ? r['route'].to_s.sub(/\A[ТтTt]0*/, '') : r['route'].to_s }
+
+  # Row 0 is this stop, at the head of the line; the rest are the stops ahead.
+  sheet_rows = [sheet[:here], *stops]
+  stop_rows = sheet_rows.map { |s| Array(s['transfers']) }
+  last = stop_rows.length - 1
+  row_y = ->(i) { i.zero? ? 221.91 : (409.19 + pitch * (i - 1)).round(2) }
+  line_x = 2813.54
+  lanes = parallel_lanes(route, stop_rows)
+  lane_x = ->(slot) { (2781.05 - 29.53 * slot).round(2) }
+  at_row = ->(lane, i) { lane[:runs].any? { |a, b| (a..b).cover?(i) } }
+  # A stop's marker spans the lanes stopping there; on its own line it is the sheet's short one.
+  pill_left = ->(i) { slots = lanes.each_index.select { |k| at_row.(lanes[k], i) }; slots.empty? ? 2794.76 : lane_x.(slots.max) }
+
+  # A route badge centred on 0,0: trams in a diamond, trolleybuses (and buses) in a square.
+  badge = lambda do |r|
+    label = badge_label.(r)
+    shape = if r['vehicle_type'] == 'tram'
+              %(<rect x="-23.71" y="-23.71" width="47.42" height="47.42" rx="8.03" transform="rotate(45)" fill="#{e.(r['color'])}"/>)
+            else
+              %(<rect x="-25.38" y="-25.38" width="50.75" height="50.75" rx="8.6" fill="#{e.(r['color'])}"/>)
+            end
+    %(#{shape}<text y="11.5" text-anchor="middle" fill="#{e.(r['text_color'] || '#FFFFFF')}" style="font-size:#{label.length > 2 ? 26 : 34}px">#{e.(label)}</text>)
+  end
+  pictograms = { tram: ['ico-tram', 38.5], trol: ['ico-trolleybus', 44] }
 %>
 <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="3508px" height="2480px" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
 viewBox="0 0 3508 2480.4"
@@ -102,8 +126,40 @@ viewBox="0 0 3508 2480.4"
   <% end %>
   <% end %>
 
-  <line x1="2813.54" y1="221.91" x2="2813.54" y2="<%= line_end.round(2) %>" stroke="<%= e.(color) %>" stroke-width="23.62"/>
-  <rect x="2780" y="207.15" width="48.3" height="29.52" rx="14.76" class="fil2 str9"/>
+  <line x1="<%= line_x %>" y1="221.91" x2="<%= line_x %>" y2="<%= line_end.round(2) %>" stroke="<%= e.(color) %>" stroke-width="23.62"/>
+  <%# Same-kind routes alongside: a lane over each run, joining just above its first stop
+      and leaving just below its last, with its badge where it leaves. %>
+  <% ending = Hash.new { |h, k| h[k] = [] } %>
+  <% lanes.each_with_index do |lane, slot| %>
+  <% lane[:runs].each do |a, b|
+       y1 = a.zero? ? row_y.(0) : (row_y.(a) - 45 * text_scale).round(2)
+       y2 = b == last ? row_y.(last) : (row_y.(b) + 38.4 * text_scale).round(2)
+       ending[b] << slot unless b == last %>
+  <line x1="<%= lane_x.(slot) %>" y1="<%= y1 %>" x2="<%= lane_x.(slot) %>" y2="<%= y2 %>" stroke="<%= e.(lane[:route]['color']) %>" stroke-width="17.72"/>
+  <% end %>
+  <% end %>
+  <% ending.each do |b, slots| slots.sort.each_with_index do |slot, k| %>
+  <g transform="translate(<%= (lane_x.(slots.min) - 11.8 - 38 * k * text_scale).round(2) %> <%= (row_y.(b) + (77.7 + 37.8 * k) * text_scale).round(2) %>) scale(<%= text_scale.round(4) %>)"><%= badge.(lanes[slot][:route]) %></g>
+  <% end end %>
+  <%# The routes that reach the end of the line, the sheet's own first, under its last stop. %>
+  <% [route, *lanes.select { |l| at_row.(l, last) }.map { |l| l[:route] }].each_with_index do |r, k| %>
+  <g transform="translate(<%= (line_x - 65 * k * text_scale).round(2) %> <%= (row_y.(last) + 61.5 * text_scale).round(2) %>) scale(<%= text_scale.round(4) %>)"><%= badge.(r) %></g>
+  <% end %>
+  <%# Each stop's marker, with the other electric kind's interchanges to its left: badges,
+      the kind's pictogram, and a dotted lead to the marker. %>
+  <% stop_rows.each_with_index do |transfers, i| left = pill_left.(i); cy = row_y.(i) %>
+  <rect x="<%= (left - 14.76).round(2) %>" y="<%= (cy - 14.76).round(2) %>" width="<%= (line_x - left + 29.52).round(2) %>" height="29.52" rx="14.76" class="fil2 str9"/>
+  <% groups = other_electric(route, transfers + Array(sheet_rows[i]['nearby'])); next if groups.empty? %>
+  <g transform="translate(<%= (left - 14.76).round(2) %> <%= cy %>) scale(<%= text_scale.round(4) %>)">
+   <line x1="-6" y1="0" x2="-24.4" y2="0" stroke="#9DA7B3" stroke-width="2.36" stroke-dasharray="2.36 2.36"/>
+   <% x = -26.2; groups.each do |type, ts| icon, w = pictograms[type] %>
+   <image xlink:href="/icons/<%= icon %>.svg" x="<%= (x - w).round(2) %>" y="-38" width="<%= w %>" height="68" preserveAspectRatio="xMidYMax meet"/>
+   <% x -= w + 8.6; ts.first(6).each do |t| %>
+   <g transform="translate(<%= (x - 25.38).round(2) %> 3.7)"><%= badge.(t) %></g>
+   <% x -= 59.06; end; x -= 8 %>
+   <% end %>
+  </g>
+  <% end %>
   <rect x="2851.46" y="172.51" width="535.57" height="139.01" rx="25.53" ry="23.62" class="fil5 str11"/>
   <text x="2869.92" y="237.85" class="fil3 fnt2" style="font-size:<%= (58.33 * [1.0, 440 / natgrotesk_width(data['name'], 58.33)].min).round(2) %>px"><%= e.(data['name']) %></text>
   <% unless title_en.empty? %>
@@ -119,13 +175,6 @@ viewBox="0 0 3508 2480.4"
      width = 73.23 + 16.54 * (digits - 1)
      offset = 34.3 + 17 * (digits - 1)
      eng = eng_name_for(s['code'], nil) %>
-  <rect x="2780" y="<%= (cy - 14.76).round(2) %>" width="48.3" height="29.52" rx="14.76" class="fil2 str9"/>
-  <% s['transfers'].select { |t| %w[tram trolleybus].include?(t['vehicle_type']) && t['route'] != route['route'] }.first(8).each_with_index do |t, k| %>
-  <g transform="translate(<%= 2735 - 58 * k %> <%= (cy - 25.4).round(2) %>)">
-   <rect width="50.75" height="50.75" rx="8.6" fill="<%= e.(t['color']) %>"/>
-   <text x="25.4" y="34" text-anchor="middle" fill="<%= e.(t['text_color'] || '#FFFFFF') %>" style="font-size:<%= badge_label.(t).length > 2 ? 26 : 34 %>px"><%= e.(badge_label.(t)) %></text>
-  </g>
-  <% end %>
   <g transform="translate(2869.92 <%= y %>) scale(<%= text_scale.round(4) %>)">
    <text class="fil3 fnt2" style="font-size:<%= (58.33 * fit).round(2) %>px"><%= e.(s['name']) %></text>
    <% unless eng.empty? %>

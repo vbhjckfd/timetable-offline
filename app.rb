@@ -314,10 +314,52 @@ def schedule_for(stop_code, transfer, route)
   next_stops = stops[at..].each_cons(2).map do |from, to|
     walked += metres_between(from['loc'], to['loc'])
     { 'name' => to['name'], 'code' => to['code'], 'minutes' => [1, (walked / METRES_PER_MINUTE).round].max,
-      'transfers' => Array(to['transfers']) }
+      'loc' => to['loc'], 'transfers' => Array(to['transfers']) }
   end
 
-  { departures: departures, next_stops: next_stops }
+  here = { 'code' => stops[at]['code'], 'loc' => stops[at]['loc'], 'transfers' => Array(stops[at]['transfers']) }
+  { departures: departures, next_stops: next_stops, here: here }
+end
+
+ELECTRIC = %i[tram trol].freeze
+
+def vehicle_type_of(transfer)
+  VEHICLE_TYPES.fetch(transfer['vehicle_type'], :bus)
+end
+
+# The sheet's stop list draws every other route of the sheet route's own kind as a lane
+# beside its line, over the rows (0 is the stop the sheet is for) where both stop, split
+# into unbroken runs. The lane that stays longest sits next to the line, so the shorter
+# ones peel off on the outside. Buses have no lanes, nor do routes beside a bus.
+def parallel_lanes(route, rows)
+  type = vehicle_type_of(route)
+  return [] unless ELECTRIC.include?(type)
+
+  at = Hash.new { |h, k| h[k] = { route: nil, rows: [] } }
+  rows.each_with_index do |transfers, i|
+    Array(transfers).each do |t|
+      next if vehicle_type_of(t) != type || t['route'] == route['route']
+
+      at[t['route']][:route] ||= t
+      at[t['route']][:rows] << i
+    end
+  end
+
+  lanes = at.values.map do |lane|
+    runs = lane[:rows].uniq.slice_when { |a, b| b != a + 1 }.map { |run| [run.first, run.last] }
+    { route: lane[:route], runs: runs }
+  end
+  lanes.sort_by { |lane| [-lane[:runs].last.last, lane[:runs].first.first, lane[:route]['route'].to_s] }
+end
+
+# The interchanges written to the left of a stop: trams and trolleybuses of a kind other
+# than the sheet route's, grouped by kind. Never buses.
+def other_electric(route, transfers)
+  type = vehicle_type_of(route)
+  Array(transfers).select { |t| ELECTRIC.include?(vehicle_type_of(t)) && vehicle_type_of(t) != type }
+                  .uniq { |t| t['route'] }
+                  .sort_by { |t| [ELECTRIC.index(vehicle_type_of(t)), t['route'].to_s] }
+                  .group_by { |t| vehicle_type_of(t) }
 end
 
 class App < Sinatra::Base
@@ -325,6 +367,11 @@ class App < Sinatra::Base
   # free, so the upstream call has to give up well before that.
   API_OPEN_TIMEOUT = 3
   API_READ_TIMEOUT = 8
+  # Nearby interchanges on a schedule sheet: within a short walk, looked up for every stop
+  # at once, and given up on as a whole after NEARBY_DEADLINE seconds.
+  NEARBY_METRES = 200
+  NEARBY_TIMEOUT = 2
+  NEARBY_DEADLINE = 4
 
   # The schema SVG is 8-16 MB raw, ~2.5 MB gzipped; Cloud Run bills egress on
   # the bytes leaving the origin, before Cloudflare's own compression.
@@ -386,6 +433,32 @@ class App < Sinatra::Base
       halt 503, 'Сервіс тимчасово недоступний' unless response.success?
 
       parse_api_json(response)
+    end
+
+    # Trams and trolleybuses stopping within NEARBY_METRES of loc, from the stops there
+    # other than code: the API lists a stop's transfers only for its own pole, and the
+    # two kinds rarely share one. Decoration, so a failed or slow lookup gives none.
+    def nearby_transfers(code, loc)
+      return [] unless loc
+
+      near = soft_api_json("/closest?latitude=#{loc[0].to_f}&longitude=#{loc[1].to_f}")
+      Array(near).select do |s|
+        s['code'].to_i != code.to_i && s['distance_meters'].to_f <= NEARBY_METRES &&
+          Array(s['routes']).any? { |r| !r.to_s.match?(/\A[АAНN]/) }
+      end.flat_map do |s|
+        Array(soft_api_json("/stops/#{ERB::Util.url_encode(s['code'].to_s)}/static")&.fetch('transfers', nil))
+      end
+    end
+
+    def soft_api_json(path)
+      response = Faraday.get("#{ENV['API_URL'] || 'https://api.lad.lviv.ua'}#{path}") do |req|
+        req.options.open_timeout = NEARBY_TIMEOUT
+        req.options.timeout = NEARBY_TIMEOUT
+      end
+      response.success? ? JSON.parse(response.body) : nil
+    rescue StandardError => e
+      warn "nearby lookup failed for #{path}: #{e.class}: #{e.message}"
+      nil
     end
 
     def load_route(route_id)
@@ -460,6 +533,13 @@ class App < Sinatra::Base
       end
     end
     halt 404, 'Для цієї зупинки немає розкладу відправлень' unless sheet
+
+    rows = [sheet[:here], *sheet[:next_stops]]
+    lookups = rows.map { |row| Thread.new { nearby_transfers(row['code'], row['loc']) } }
+    deadline = Time.now + NEARBY_DEADLINE
+    rows.zip(lookups) do |row, lookup|
+      row['nearby'] = lookup.join([deadline - Time.now, 0].max) ? lookup.value : []
+    end
 
     data['name_en'] = eng_name_for(stop_code, data['eng_name'])
 

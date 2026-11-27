@@ -386,3 +386,44 @@ RSpec.describe '#faded_route_colours' do
     expect(faded_routes_css(stop(['А20', 'bus']))).to be_nil
   end
 end
+
+RSpec.describe '#parallel_lanes' do
+  def t(route, type = 'tram') = { 'route' => route, 'vehicle_type' => type, 'color' => "##{route}" }
+
+  let(:route) { t('Т03') }
+
+  it 'gives each same-kind route its unbroken runs, longest-running innermost' do
+    rows = [[t('Т08')], [t('Т08'), t('Т09')], [t('Т08'), t('Т09')], [t('Т09')], [t('Т04'), t('Т09')], [], []]
+    lanes = parallel_lanes(route, rows)
+    expect(lanes.map { |l| [l[:route]['route'], l[:runs]] })
+      .to eq([['Т09', [[1, 4]]], ['Т04', [[4, 4]]], ['Т08', [[0, 2]]]])
+  end
+
+  it 'splits a route that leaves and rejoins into two runs' do
+    lanes = parallel_lanes(route, [[t('Т09')], [], [t('Т09')]])
+    expect(lanes.first[:runs]).to eq([[0, 0], [2, 2]])
+  end
+
+  it 'leaves out buses, other kinds and the route itself' do
+    rows = [[t('А07', 'bus'), t('Т25', 'trolleybus'), t('Т03')]]
+    expect(parallel_lanes(route, rows)).to eq([])
+  end
+
+  it 'draws no lanes beside a bus' do
+    expect(parallel_lanes(t('А07', 'bus'), [[t('А20', 'bus')]])).to eq([])
+  end
+end
+
+RSpec.describe '#other_electric' do
+  def t(route, type) = { 'route' => route, 'vehicle_type' => type }
+
+  it 'keeps only the other electric kind, never buses' do
+    groups = other_electric(t('Т03', 'tram'), [t('Т25', 'trolleybus'), t('Т09', 'tram'), t('А07', 'bus'), t('Т11', 'trolleybus')])
+    expect(groups.transform_values { |ts| ts.map { |x| x['route'] } }).to eq(trol: %w[Т11 Т25])
+  end
+
+  it 'gives a bus both trams and trolleybuses' do
+    groups = other_electric(t('А07', 'bus'), [t('Т25', 'trolleybus'), t('Т09', 'tram'), t('А20', 'bus')])
+    expect(groups.keys).to eq(%i[tram trol])
+  end
+end
