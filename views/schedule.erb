@@ -56,6 +56,7 @@ viewBox="0 0 3508 2480.4"
     .str2 {stroke:#2B2A29;stroke-width:2.36;stroke-miterlimit:22.9256}
     .str9 {stroke:#2B2A29;stroke-width:4.72;stroke-miterlimit:22.9256}
     .str11 {stroke:#9DA7B3;stroke-width:0.9;stroke-miterlimit:22.9256}
+    .str12 {stroke:#9DA7B3;stroke-width:4.72;stroke-miterlimit:22.9256}
     .str13 {stroke:#BDCCDB;stroke-width:0.9;stroke-miterlimit:22.9256}
     .fil0 {fill:#9DA7B3;fill-rule:nonzero}
     .fil2 {fill:#FEFEFE}
@@ -104,10 +105,13 @@ viewBox="0 0 3508 2480.4"
   <line x1="2813.54" y1="221.91" x2="2813.54" y2="<%= line_end.round(2) %>" stroke="<%= e.(color) %>" stroke-width="23.62"/>
   <rect x="2780" y="207.15" width="48.3" height="29.52" rx="14.76" class="fil2 str9"/>
   <rect x="2851.46" y="172.51" width="535.57" height="139.01" rx="25.53" ry="23.62" class="fil5 str11"/>
-  <text x="2869.92" y="237.85" class="fil3 fnt2" style="font-size:<%= (58.33 * [1.0, 490 / natgrotesk_width(data['name'], 58.33)].min).round(2) %>px"><%= e.(data['name']) %></text>
+  <text x="2869.92" y="237.85" class="fil3 fnt2" style="font-size:<%= (58.33 * [1.0, 440 / natgrotesk_width(data['name'], 58.33)].min).round(2) %>px"><%= e.(data['name']) %></text>
   <% unless title_en.empty? %>
-  <text x="2869.92" y="285.1" class="fil4 fnt3" style="font-size:<%= (45.83 * [1.0, 490 / natgrotesk_width(title_en, 45.83)].min).round(2) %>px"><%= e.(title_en) %></text>
+  <text x="2869.92" y="285.1" class="fil4 fnt3" style="font-size:<%= (45.83 * [1.0, 440 / natgrotesk_width(title_en, 45.83)].min).round(2) %>px"><%= e.(title_en) %></text>
   <% end %>
+
+  <polyline class="fil5 str12" points="3363.82,247.41 3347.16,264.07 3330.49,247.41"/>
+  <line class="fil5 str12" x1="3347.16" y1="264.07" x2="3347.16" y2="219.96"/>
 
   <% stops.each_with_index do |s, i| y = (423.98 + pitch * i).round(2); cy = (y - 14.79).round(2)
      fit = [1.0, name_room / natgrotesk_width(s['name'], 58.33)].min
@@ -116,7 +120,7 @@ viewBox="0 0 3508 2480.4"
      offset = 34.3 + 17 * (digits - 1)
      eng = eng_name_for(s['code'], nil) %>
   <rect x="2780" y="<%= (cy - 14.76).round(2) %>" width="48.3" height="29.52" rx="14.76" class="fil2 str9"/>
-  <% s['transfers'].reject { |t| t['id'] == route['id'] }.first(8).each_with_index do |t, k| %>
+  <% s['transfers'].select { |t| %w[tram trolleybus].include?(t['vehicle_type']) && t['route'] != route['route'] }.first(8).each_with_index do |t, k| %>
   <g transform="translate(<%= 2735 - 58 * k %> <%= (cy - 25.4).round(2) %>)">
    <rect width="50.75" height="50.75" rx="8.6" fill="<%= e.(t['color']) %>"/>
    <text x="25.4" y="34" text-anchor="middle" fill="<%= e.(t['text_color'] || '#FFFFFF') %>" style="font-size:<%= badge_label.(t).length > 2 ? 26 : 34 %>px"><%= e.(badge_label.(t)) %></text>
