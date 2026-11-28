@@ -561,6 +561,26 @@ RSpec.describe App do
     end
   end
 
+  describe 'Cyrillic route letters in the query' do
+    it 'redirects Cyrillic А and Т to their Latin twins' do
+      get "/#{STOP_CODE}/schema?only=%D0%9033,%D0%A233&fade=1"
+      expect(last_response.status).to eq(301)
+      expect(last_response.headers['Location']).to end_with("/#{STOP_CODE}/schema?only=A33,T33&fade=1")
+    end
+
+    it 'catches lowercase percent-encoding too' do
+      get "/#{STOP_CODE}/schedule?route=%d0%a233"
+      expect(last_response.status).to eq(301)
+      expect(last_response.headers['Location']).to end_with("/#{STOP_CODE}/schedule?route=T33")
+    end
+
+    it 'leaves Latin queries alone' do
+      stub_stop(body: valid_body)
+      get "/#{STOP_CODE}?only=A33"
+      expect(last_response.status).to eq(200)
+    end
+  end
+
   describe 'upstream URL construction' do
     it 'percent-encodes the stop code instead of interpolating it raw' do
       escaped = stub_request(:get, "#{API_BASE}/stops/%D0%90/static")
@@ -735,7 +755,7 @@ RSpec.describe App do
 
     it 'filters by ?route=' do
       stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13]), route_stop(81, 'Наступна', 49.8043)])
-      get "/#{STOP_CODE}/schedule", route: 'Т99'
+      get "/#{STOP_CODE}/schedule", route: 'T99'
       expect(last_response.status).to eq(404)
     end
 

@@ -429,6 +429,11 @@ class App < Sinatra::Base
     headers 'X-Robots-Tag' => 'noindex, nofollow'
     # Errors stay uncached; a rendered drawing opts in with cache_at_edge.
     cache_control :no_store
+
+    # ?only=А33 and ?only=A33 draw the same thing; one canonical Latin URL keeps
+    # them one cache entry. Cyrillic А is %D0%90, Т is %D0%A2.
+    latin = request.query_string.gsub(/%D0%(90|A2)/i) { $1 == '90' ? 'A' : 'T' }.tr('АТ', 'AT')
+    redirect "#{request.path}?#{latin}", 301 unless latin == request.query_string
   end
 
   helpers do
