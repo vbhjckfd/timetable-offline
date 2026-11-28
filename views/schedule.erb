@@ -165,6 +165,10 @@ viewBox="0 0 3508 2480.4"
   <%# Each stop's marker, with the other electric kind's interchanges to its left: badges,
       the kind's pictogram, and a dotted lead to the marker. %>
   <% stop_rows.each_with_index do |transfers, i| left = pill_left.(i); cy = row_y.(i) %>
+  <% if sheet_rows[i]['gap'] %>
+  <% [-1, 0, 1].each do |k| %>
+  <circle cx="<%= line_x %>" cy="<%= (cy + 30 * k * text_scale).round(2) %>" r="<%= (6 * text_scale).round(2) %>" class="fil2"/>
+  <% end; next end %>
   <rect x="<%= (left - 14.76).round(2) %>" y="<%= (cy - 14.76).round(2) %>" width="<%= (line_x - left + 29.52).round(2) %>" height="29.52" rx="14.76" class="fil2 str9"/>
   <% groups = other_electric(route, transfers + Array(sheet_rows[i]['nearby']),
                              lanes.select { |l| at_row.(l, i) }.map { |l| l[:route]['route'] }); next if groups.empty? %>
@@ -187,7 +191,10 @@ viewBox="0 0 3508 2480.4"
   <polyline class="fil5 str12" points="3363.82,247.41 3347.16,264.07 3330.49,247.41"/>
   <line class="fil5 str12" x1="3347.16" y1="264.07" x2="3347.16" y2="219.96"/>
 
-  <% stops.each_with_index do |s, i| y = (423.98 + pitch * i).round(2); cy = (y - 14.79).round(2)
+  <% stops.each_with_index do |s, i| y = (423.98 + pitch * i).round(2)
+     if s['gap'] %>
+  <text x="2869.92" y="<%= y %>" class="fil4" style="font-size:<%= (75 * text_scale).round(2) %>px">…</text>
+  <% next end
      fit = [1.0, name_room / natgrotesk_width(s['name'], 58.33)].min
      digits = s['minutes'].to_s.length
      width = 73.23 + 16.54 * (digits - 1)

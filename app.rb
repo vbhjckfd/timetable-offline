@@ -329,7 +329,22 @@ def schedule_for(stop_code, transfer, route)
   end
 
   here = { 'code' => stops[at]['code'], 'loc' => stops[at]['loc'], 'transfers' => Array(stops[at]['transfers']) }
-  { departures: departures, next_stops: next_stops, here: here }
+  { departures: departures, next_stops: elide_middle(next_stops), here: here }
+end
+
+# The sheet's stop list stays readable up to MAX_NEXT_STOPS rows; a longer line keeps its
+# first and last stops and gives up the middle to a gap row, which carries the routes running
+# on both sides of it so their lanes go on across.
+MAX_NEXT_STOPS = 15
+
+def elide_middle(stops)
+  return stops if stops.length <= MAX_NEXT_STOPS
+
+  keep = (MAX_NEXT_STOPS - 1) / 2
+  head = stops.first(keep)
+  tail = stops.last(MAX_NEXT_STOPS - 1 - keep)
+  after = tail.first['transfers'].map { |t| t['route'] }
+  [*head, { 'gap' => true, 'transfers' => head.last['transfers'].select { |t| after.include?(t['route']) } }, *tail]
 end
 
 ELECTRIC = %i[tram trol].freeze

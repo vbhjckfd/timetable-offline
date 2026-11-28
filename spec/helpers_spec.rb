@@ -438,3 +438,33 @@ RSpec.describe '#other_electric' do
     expect(groups.keys).to eq(%i[tram])
   end
 end
+
+RSpec.describe '#schedule_for' do
+  def stop(code, transfers = []) = { 'code' => code, 'name' => "S#{code}", 'loc' => [49.8 + code / 1000.0, 24.0], 'transfers' => transfers }
+
+  let(:tram) { { 'route' => 'Т09', 'vehicle_type' => 'tram' } }
+
+  def sheet_for(count, transfers = ->(_) { [] })
+    first = stop(0).merge('schedule' => { 'workday' => %w[06:13] })
+    route = { 'stops' => [[first, *(1..count).map { |c| stop(c, transfers.(c)) }]] }
+    schedule_for(0, { 'direction_id' => 0 }, route)
+  end
+
+  it 'lists every stop ahead when they fit' do
+    expect(sheet_for(15)[:next_stops].map { |s| s['code'] }).to eq((1..15).to_a)
+  end
+
+  it 'cuts a longer line in the middle, keeping its first and last stops around a gap' do
+    rows = sheet_for(40)[:next_stops]
+    expect(rows.length).to eq(15)
+    expect(rows.map { |s| s['code'] }).to eq([*1..7, nil, *34..40])
+    expect(rows[7]).to include('gap' => true)
+  end
+
+  it 'carries a lane across the gap only when it runs on both sides' do
+    rows = sheet_for(40, ->(c) { c.between?(5, 36) ? [tram] : [] })[:next_stops]
+    expect(rows[7]['transfers']).to eq([tram])
+    rows = sheet_for(40, ->(c) { c <= 7 ? [tram] : [] })[:next_stops]
+    expect(rows[7]['transfers']).to eq([])
+  end
+end
