@@ -49,10 +49,10 @@ RSpec.describe App do
 
       # Cached at Cloudflare per full URL (query string included) and purged
       # with the `short` tag on every data refresh.
-      it 'lets Cloudflare cache it for a day under the short tag' do
+      it 'lets Cloudflare cache it for a day under the short and svg tags' do
         get "/#{STOP_CODE}"
         expect(last_response.headers['Cache-Control']).to eq('public, max-age=0, s-maxage=86400, stale-while-revalidate=86400')
-        expect(last_response.headers['Cache-Tag']).to eq('short')
+        expect(last_response.headers['Cache-Tag']).to eq('short,svg')
       end
 
       it 'renders an SVG document' do
@@ -380,10 +380,10 @@ RSpec.describe App do
         expect(last_response.headers['X-Robots-Tag']).to eq('noindex, nofollow')
       end
 
-      it 'lets Cloudflare cache it for a day under the short tag' do
+      it 'lets Cloudflare cache it for a day under the short and svg tags' do
         get "/#{STOP_CODE}/schema"
         expect(last_response.headers['Cache-Control']).to include('s-maxage=86400')
-        expect(last_response.headers['Cache-Tag']).to eq('short')
+        expect(last_response.headers['Cache-Tag']).to eq('short,svg')
       end
 
       it 'does not cache an unknown stop' do

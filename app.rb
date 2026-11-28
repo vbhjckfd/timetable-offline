@@ -434,10 +434,11 @@ class App < Sinatra::Base
   helpers do
     # Cloudflare keys on the full URL, so each ?only/add/remove/fade variant is
     # its own entry. The daily data refresh purges the `short` tag zone-wide,
-    # so a drawing never outlives the stop data it was drawn from.
+    # so a drawing never outlives the stop data it was drawn from; `svg` purges
+    # just the drawings.
     def cache_at_edge
       headers 'Cache-Control' => 'public, max-age=0, s-maxage=86400, stale-while-revalidate=86400',
-              'Cache-Tag' => 'short'
+              'Cache-Tag' => 'short,svg'
     end
 
     # Inlined, not linked: an SVG shown through <img> or saved to disk loads
