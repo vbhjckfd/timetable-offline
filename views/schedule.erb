@@ -149,9 +149,10 @@ viewBox="0 0 3508 2480.4"
   <% slots.sort.each_with_index do |slot, k| %>
   <g transform="translate(<%= (lane_x.(slots.min) - 11.8 - dx * k * text_scale).round(2) %> <%= (row_y.(b) + (77.7 + dy * k) * text_scale).round(2) %>) scale(<%= text_scale.round(4) %>)"><%= badge.(lanes[slot][:route]) %></g>
   <% end end %>
-  <%# The routes that reach the end of the line, the sheet's own first, under its last stop. %>
+  <%# The routes that reach the end of the line, the sheet's own first, under its last stop:
+      clear of the marker, which does not shrink with the list (17.12 is half its height). %>
   <% [route, *lanes.select { |l| at_row.(l, last) }.map { |l| l[:route] }].each_with_index do |r, k| %>
-  <g transform="translate(<%= (line_x - 65 * k * text_scale).round(2) %> <%= (row_y.(last) + 61.5 * text_scale).round(2) %>) scale(<%= text_scale.round(4) %>)"><%= badge.(r) %></g>
+  <g transform="translate(<%= (line_x - 65 * k * text_scale).round(2) %> <%= (row_y.(last) + 17.12 + 44.38 * text_scale).round(2) %>) scale(<%= text_scale.round(4) %>)"><%= badge.(r) %></g>
   <% end %>
   <%# Each stop's marker, with the other electric kind's interchanges to its left: badges,
       the kind's pictogram, and a dotted lead to the marker. %>
