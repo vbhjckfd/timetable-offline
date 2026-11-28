@@ -36,7 +36,7 @@ deploy: build
 up: build-gemfile build
 	docker-compose up --build
 
-# Purge only responses tagged Cache-Tag: svg; a full purge would drop other hosts in the zone.
+# Purge responses tagged Cache-Tag: svg and pdf (both services share the zone); a full purge would drop other hosts in the zone.
 CLOUDFLARE_CACHE_CLEAR_URL ?= https://drop-cloudflare-cache-1041251696619.us-central1.run.app
 clear-cache:
-	curl -sS "$(CLOUDFLARE_CACHE_CLEAR_URL)?tags=svg"
+	for tag in svg pdf; do curl -sS "$(CLOUDFLARE_CACHE_CLEAR_URL)?tags=$$tag"; done

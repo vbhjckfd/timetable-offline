@@ -689,6 +689,20 @@ RSpec.describe App do
       expect(last_response.body).to include('Наступна', '>13<', '>25<', '>50<')
     end
 
+    it 'skips suburb stops between the ends of the line, behind a gap row' do
+      stub_route(7, [route_stop(80, 'Рудно, Семінарія', 49.8, %w[06:13]),
+                     route_stop(81, 'Рудно, Шевченка', 49.804),
+                     route_stop(82, 'Рудно, Лисенка', 49.808),
+                     route_stop(83, 'Городоцька, Метро', 49.812),
+                     route_stop(84, 'Брюховичі, Лісова', 49.816),
+                     route_stop(85, 'Брюховичі, Кінцева', 49.82)])
+      get "/#{STOP_CODE}/schedule"
+      body = last_response.body
+      expect(body).not_to include('Шевченка', 'Лисенка', 'Лісова')
+      expect(body).to include('Городоцька, Метро', 'Брюховичі, Кінцева')
+      expect(body.scan('>…<').length).to eq(2)
+    end
+
     it 'splits the weekend into Saturday and Sunday when they run different timetables' do
       first = route_stop(80, 'Стрийський ринок', 49.8, %w[06:13])
       first['schedule'].merge!('saturday' => %w[07:41], 'sunday' => %w[08:52], 'weekend' => %w[07:41 08:52])
@@ -755,6 +769,18 @@ RSpec.describe App do
       dashed = last_response.body.scan(/<line [^>]*stroke-dasharray[^>]*>/)
       expect(dashed.grep(/stroke="#50B056"/)).not_to be_empty
       expect(dashed.grep(/stroke="#123456"/)).not_to be_empty
+    end
+
+    it 'slants the lead of a group sitting under badges of lanes that just ended' do
+      tram = ->(n) { { 'route' => "Т0#{n}", 'vehicle_type' => 'tram', 'color' => '#12345%d' % n } }
+      stops = (0...4).map { |k| route_stop(80 + k, "Зупинка #{k}", 49.8 + 0.004 * k, k.zero? ? %w[06:13] : nil) }
+      stops[0]['transfers'] = stops[1]['transfers'] = [tram.(4), tram.(5), tram.(6)]
+      stops[2]['transfers'] = [{ 'route' => 'Т25', 'vehicle_type' => 'trolleybus', 'color' => '#E85222' }]
+      stub_route(7, stops)
+      get "/#{STOP_CODE}/schedule"
+      leads = last_response.body.scan(/<line x1="-6" y1="0" x2="-24.4" y2="([\d.]+)"/).flatten.map(&:to_f)
+      expect(leads).not_to be_empty
+      expect(leads).to all(be > 0)
     end
 
     it 'still renders when the nearby lookup fails' do

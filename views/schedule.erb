@@ -175,21 +175,27 @@ viewBox="0 0 3508 2480.4"
   <% end %>
   <%# Each stop's marker, with the other electric kind's interchanges to its left: badges,
       the kind's pictogram, and a dotted lead to the marker. %>
-  <% stop_rows.each_with_index do |transfers, i| left = pill_left.(i); cy = row_y.(i) %>
+  <%# A group just below leaving badges steps down out of their way, its dotted lead slanting. %>
+  <% stop_rows.each_with_index do |transfers, i| left = pill_left.(i); cy = row_y.(i)
+     n = i.zero? ? 0 : ending.fetch(i - 1, []).length
+     below = n < 2 ? 0 : (77.7 + (n > 2 ? 37.8 : 37.8 * (n - 1)) + 27) * text_scale
+     drop = [(below + 4 * text_scale - (cy - row_y.(i - 1) - 55 * text_scale)) / text_scale, 0].max.round(2) %>
   <% next if sheet_rows[i]['gap'] %>
   <rect x="<%= (left - 14.76).round(2) %>" y="<%= (cy - 14.76).round(2) %>" width="<%= (line_x - left + 29.52).round(2) %>" height="29.52" rx="14.76" class="fil2 str9"/>
   <% groups = other_electric(route, transfers + Array(sheet_rows[i]['nearby']),
                              lanes.select { |l| at_row.(l, i) }.map { |l| l[:route]['route'] }); next if groups.empty? %>
   <g transform="translate(<%= (left - 14.76).round(2) %> <%= cy %>) scale(<%= text_scale.round(4) %>)">
-   <line x1="-6" y1="0" x2="-24.4" y2="0" stroke="#9DA7B3" stroke-width="2.36" stroke-dasharray="2.36 2.36"/>
+   <line x1="-6" y1="0" x2="-24.4" y2="<%= drop %>" stroke="#9DA7B3" stroke-width="2.36" stroke-dasharray="2.36 2.36"/>
+   <g transform="translate(0 <%= drop %>)">
    <% x = -26.2; groups.each do |type, ts| icon, w = pictograms[type] %>
    <image xlink:href="<%= icon_href(icon) %>" x="<%= (x - w).round(2) %>" y="-38" width="<%= w %>" height="68" preserveAspectRatio="xMidYMax meet"/>
    <%# Badges in two lanes, filled a column at a time; a column's lone badge sits centred. %>
    <% x -= w + 8.6; ts.first(6).each_slice(2) do |col| %>
    <% col.each_with_index do |t, k| y = col.length == 1 ? 3.7 : 3.7 + 34 * (2 * k - 1) %>
    <g transform="translate(<%= (x - 25.38).round(2) %> <%= y.round(2) %>)"><%= badge.(t) %></g>
-   <% end; x -= 59.06; end; x -= 8 %>
+   <% end; x -= col.any? { |t| t['vehicle_type'] == 'tram' } ? 68.7 : 59.06; end; x -= 8 %>
    <% end %>
+   </g>
   </g>
   <% end %>
   <rect x="2851.46" y="172.51" width="535.57" height="139.01" rx="25.53" ry="23.62" class="fil5 str11"/>

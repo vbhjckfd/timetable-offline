@@ -329,7 +329,30 @@ def schedule_for(stop_code, transfer, route)
   end
 
   here = { 'code' => stops[at]['code'], 'loc' => stops[at]['loc'], 'transfers' => Array(stops[at]['transfers']) }
-  { departures: departures, next_stops: elide_middle(next_stops), here: here }
+  { departures: departures, next_stops: skip_suburbs(next_stops, here), here: here }
+end
+
+SUBURB_PREFIXES = [
+  'Винники, ', 'Винники. ', 'Дубляни, ', 'Брюховичі, ', 'Брюховичі. ', 'Великий Дорошів, ',
+  'Підрясне, ', 'Рясне-Руське, ', 'Воля Гамулецька, ', 'Гряда, ', 'Завадів, ', 'Зашків, ',
+  'Малехів, ', 'Лисиничі, ', 'Підбірці, ', 'Великі Грибовичі, ', 'Малі грибовичі, ',
+  'Малі Грибовичі, ', 'Муроване, ', 'Рудно, ', 'Рудне, '
+].freeze
+
+def suburb?(name)
+  SUBURB_PREFIXES.any? { |p| name.to_s.start_with?(p) }
+end
+
+# Only the ends of a line matter in a suburb: the sheet's own stop and the last one. Each run
+# of suburb stops between them folds into a gap row, which takes a row like any other before
+# the long-line elision runs; gaps that elision then lands next to each other merge into one.
+def skip_suburbs(stops, here)
+  rows = stops.each_with_index.map do |s, i|
+    i < stops.length - 1 && suburb?(s['name']) ? { 'gap' => true, 'transfers' => [] } : s
+  end
+  rows = elide_middle(rows.chunk_while { |a, b| a['gap'] && b['gap'] }.map(&:first))
+  rows = rows.chunk_while { |a, b| a['gap'] && b['gap'] }.map(&:first)
+  rows.each_with_index.map { |r, i| r['gap'] ? gap_row(i.zero? ? here : rows[i - 1], rows[i + 1]) : r }
 end
 
 # The sheet's stop list stays readable up to MAX_NEXT_STOPS rows; a longer line keeps its
@@ -650,29 +673,7 @@ class App < Sinatra::Base
 
     n = detect_layout(transfers)
 
-    [
-      'Винники, ',
-      'Винники. ',
-      'Дубляни, ',
-      'Брюховичі, ',
-      'Брюховичі. ',
-      'Великий Дорошів, ',
-      'Підрясне, ',
-      'Рясне-Руське, ',
-      'Воля Гамулецька, ',
-      'Гряда, ',
-      'Завадів, ',
-      'Зашків, ',
-      'Малехів, ',
-      'Лисиничі, ',
-      'Підбірці, ',
-      'Великі Грибовичі, ',
-      'Малі грибовичі, ',
-      'Малі Грибовичі, ',
-      'Муроване, ',
-      'Рудно, ',
-      'Рудне, ',
-    ].each {|s| data['name'] = data['name'].to_s.sub(s, '') }
+    SUBURB_PREFIXES.each { |s| data['name'] = data['name'].to_s.sub(s, '') }
     data['name'] = data['name'].to_s.sub(/\A./, &:upcase)
 
     erb "layout-#{n}".to_sym,
