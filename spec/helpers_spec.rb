@@ -409,8 +409,14 @@ RSpec.describe '#parallel_lanes' do
     expect(parallel_lanes(route, rows)).to eq([])
   end
 
-  it 'draws no lanes beside a bus' do
-    expect(parallel_lanes(t('А07', 'bus'), [[t('А20', 'bus')]])).to eq([])
+  it 'draws trams and trolleybuses running beside a bus, never other buses' do
+    lanes = parallel_lanes(t('А07', 'bus'), [[t('А20', 'bus'), t('Т25', 'trolleybus'), t('Т09')], [t('Т25', 'trolleybus')]])
+    expect(lanes.map { |l| [l[:route]['route'], l[:runs]] }).to eq([['Т25', [[0, 1]]]])
+  end
+
+  it 'leaves a route that only crosses a bus at one stop to the interchanges' do
+    lanes = parallel_lanes(t('А07', 'bus'), [[t('Т09')], [t('Т25', 'trolleybus')], [t('Т25', 'trolleybus')], [t('Т09')]])
+    expect(lanes.map { |l| [l[:route]['route'], l[:runs]] }).to eq([['Т25', [[1, 2]]]])
   end
 end
 
@@ -425,5 +431,10 @@ RSpec.describe '#other_electric' do
   it 'gives a bus both trams and trolleybuses' do
     groups = other_electric(t('А07', 'bus'), [t('Т25', 'trolleybus'), t('Т09', 'tram'), t('А20', 'bus')])
     expect(groups.keys).to eq(%i[tram trol])
+  end
+
+  it 'leaves out routes already drawn as lanes at the stop' do
+    groups = other_electric(t('А07', 'bus'), [t('Т25', 'trolleybus'), t('Т09', 'tram')], %w[Т25])
+    expect(groups.keys).to eq(%i[tram])
   end
 end

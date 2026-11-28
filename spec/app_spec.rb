@@ -693,6 +693,21 @@ RSpec.describe App do
       expect(a_request(:get, "#{API_BASE}/stops/500/static")).not_to have_been_made
     end
 
+    context 'for a bus' do
+      let(:transfers) { [{ 'id' => 94, 'route' => 'А03', 'vehicle_type' => 'bus', 'direction_id' => 0, 'color' => '#0E4F95' }] }
+
+      it 'renders with its route sign and only tram and trolleybus interchanges' do
+        first = route_stop(80, 'Стрийський ринок', 49.8, %w[06:13])
+        first['transfers'] = [{ 'route' => 'Т25', 'vehicle_type' => 'trolleybus', 'color' => '#E85222' },
+                              { 'route' => 'А18', 'vehicle_type' => 'bus', 'color' => '#0E4F96' }]
+        stub_route(94, [first, route_stop(81, 'Наступна', 49.8043)])
+        get "/#{STOP_CODE}/schedule"
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include(icon('ico-bus'), icon('3a'), 'fill="#E85222"')
+        expect(last_response.body).not_to include('#0E4F96', '>А03<')
+      end
+    end
+
     it 'still renders when the nearby lookup fails' do
       stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13]), route_stop(81, 'Наступна', 49.8043)])
       stub_request(:get, %r{\A#{API_BASE}/closest}).to_return(status: 500)

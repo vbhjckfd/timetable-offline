@@ -53,8 +53,13 @@
   # A stop's marker spans the lanes stopping there; on its own line it is the sheet's short one.
   pill_left = ->(i) { slots = lanes.each_index.select { |k| at_row.(lanes[k], i) }; slots.empty? ? 2794.76 : lane_x.(slots.max) }
 
-  # A route badge centred on 0,0: trams in a diamond, trolleybuses (and buses) in a square.
+  # A route badge centred on 0,0: trams in a diamond, trolleybuses in a square, buses as
+  # their round route sign (a square cannot fit "А03").
   badge = lambda do |r|
+    unless %w[tram trolleybus].include?(r['vehicle_type'])
+      next %(<image xlink:href="#{icon_href(normalize_route_name(r['route']))}" x="-27" y="-27" width="54" height="54"/>)
+    end
+
     label = badge_label.(r)
     shape = if r['vehicle_type'] == 'tram'
               %(<rect x="-23.71" y="-23.71" width="47.42" height="47.42" rx="8.03" transform="rotate(45)" fill="#{e.(r['color'])}"/>)
@@ -149,7 +154,8 @@ viewBox="0 0 3508 2480.4"
       the kind's pictogram, and a dotted lead to the marker. %>
   <% stop_rows.each_with_index do |transfers, i| left = pill_left.(i); cy = row_y.(i) %>
   <rect x="<%= (left - 14.76).round(2) %>" y="<%= (cy - 14.76).round(2) %>" width="<%= (line_x - left + 29.52).round(2) %>" height="29.52" rx="14.76" class="fil2 str9"/>
-  <% groups = other_electric(route, transfers + Array(sheet_rows[i]['nearby'])); next if groups.empty? %>
+  <% groups = other_electric(route, transfers + Array(sheet_rows[i]['nearby']),
+                             lanes.select { |l| at_row.(l, i) }.map { |l| l[:route]['route'] }); next if groups.empty? %>
   <g transform="translate(<%= (left - 14.76).round(2) %> <%= cy %>) scale(<%= text_scale.round(4) %>)">
    <line x1="-6" y1="0" x2="-24.4" y2="0" stroke="#9DA7B3" stroke-width="2.36" stroke-dasharray="2.36 2.36"/>
    <% x = -26.2; groups.each do |type, ts| icon, w = pictograms[type] %>

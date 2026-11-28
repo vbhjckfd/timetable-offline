@@ -331,18 +331,19 @@ def vehicle_type_of(transfer)
   VEHICLE_TYPES.fetch(transfer['vehicle_type'], :bus)
 end
 
-# The sheet's stop list draws every other route of the sheet route's own kind as a lane
-# beside its line, over the rows (0 is the stop the sheet is for) where both stop, split
-# into unbroken runs. The lane that stays longest sits next to the line, so the shorter
-# ones peel off on the outside. Buses have no lanes, nor do routes beside a bus.
+# The sheet's stop list draws other routes as lanes beside its line, over the rows (0 is
+# the stop the sheet is for) where both stop, split into unbroken runs: the sheet route's
+# own kind for a tram or trolleybus, both of those for a bus. Never buses. Beside a bus a
+# lane must run on for two stops or more: one that only crosses it is an interchange. The
+# lane that stays longest sits next to the line, so the shorter ones peel off outside.
 def parallel_lanes(route, rows)
   type = vehicle_type_of(route)
-  return [] unless ELECTRIC.include?(type)
+  kinds = ELECTRIC.include?(type) ? [type] : ELECTRIC
 
   at = Hash.new { |h, k| h[k] = { route: nil, rows: [] } }
   rows.each_with_index do |transfers, i|
     Array(transfers).each do |t|
-      next if vehicle_type_of(t) != type || t['route'] == route['route']
+      next if !kinds.include?(vehicle_type_of(t)) || t['route'] == route['route']
 
       at[t['route']][:route] ||= t
       at[t['route']][:rows] << i
@@ -351,16 +352,18 @@ def parallel_lanes(route, rows)
 
   lanes = at.values.map do |lane|
     runs = lane[:rows].uniq.slice_when { |a, b| b != a + 1 }.map { |run| [run.first, run.last] }
-    { route: lane[:route], runs: runs }
-  end
+    runs.reject! { |a, b| a == b } if kinds == ELECTRIC
+    { route: lane[:route], runs: runs } unless runs.empty?
+  end.compact
   lanes.sort_by { |lane| [-lane[:runs].last.last, lane[:runs].first.first, lane[:route]['route'].to_s] }
 end
 
 # The interchanges written to the left of a stop: trams and trolleybuses of a kind other
-# than the sheet route's, grouped by kind. Never buses.
-def other_electric(route, transfers)
+# than the sheet route's, grouped by kind, less those drawn as lanes there. Never buses.
+def other_electric(route, transfers, laned = [])
   type = vehicle_type_of(route)
   Array(transfers).select { |t| ELECTRIC.include?(vehicle_type_of(t)) && vehicle_type_of(t) != type }
+                  .reject { |t| laned.include?(t['route']) }
                   .uniq { |t| t['route'] }
                   .sort_by { |t| [ELECTRIC.index(vehicle_type_of(t)), t['route'].to_s] }
                   .group_by { |t| vehicle_type_of(t) }
