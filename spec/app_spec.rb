@@ -746,6 +746,17 @@ RSpec.describe App do
       end
     end
 
+    it 'dashes the line and the lanes running alongside across a gap in a long stop list' do
+      alongside = { 'route' => 'Т06', 'vehicle_type' => 'tram', 'color' => '#123456' }
+      stops = (0...30).map { |k| route_stop(80 + k, "Зупинка #{k}", 49.8 + 0.004 * k, k.zero? ? %w[06:13] : nil) }
+      stops.each { |s| s['transfers'] = [alongside] }
+      stub_route(7, stops)
+      get "/#{STOP_CODE}/schedule"
+      dashed = last_response.body.scan(/<line [^>]*stroke-dasharray[^>]*>/)
+      expect(dashed.grep(/stroke="#50B056"/)).not_to be_empty
+      expect(dashed.grep(/stroke="#123456"/)).not_to be_empty
+    end
+
     it 'still renders when the nearby lookup fails' do
       stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13]), route_stop(81, 'Наступна', 49.8043)])
       stub_request(:get, %r{\A#{API_BASE}/closest}).to_return(status: 500)

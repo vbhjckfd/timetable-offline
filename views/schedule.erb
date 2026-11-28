@@ -45,7 +45,6 @@
   # The stop list: the sheet's 186 px between names, squeezed (with the text) for long lines.
   pitch = [186.12, 1675.14 / [stops.length - 1, 1].max].min
   text_scale = pitch / 186.12
-  line_end = 409.19 + pitch * (stops.length - 1)
   name_room = 3480 - 2869.92
   badge_label = ->(r) { %w[tram trolleybus].include?(r['vehicle_type']) ? r['route'].to_s.sub(/\A[ТтTt]0*/, '') : r['route'].to_s }
 
@@ -139,7 +138,19 @@ viewBox="0 0 3508 2480.4"
   <% end %>
   <% end %>
 
-  <line x1="<%= line_x %>" y1="221.91" x2="<%= line_x %>" y2="<%= line_end.round(2) %>" stroke="<%= e.(color) %>" stroke-width="23.62"/>
+  <%# A line over rows a..b, from y1 to y2: solid, but dashed across each gap row's
+      skipped stops, from the stop before the gap to the stop after it. %>
+  <% gaps = (0..last).select { |i| sheet_rows[i]['gap'] }
+     dash = "#{(30 * text_scale).round(2)} #{(20 * text_scale).round(2)}"
+     track = lambda do |x, y1, y2, a, b, stroke, width|
+       inner = gaps.select { |g| a < g && g < b }
+       ys = [y1, *inner.flat_map { |g| [row_y.(g - 1), row_y.(g + 1)] }, y2]
+       ys.each_cons(2).each_with_index.map do |(p, q), k|
+         %(<line x1="#{x}" y1="#{p}" x2="#{x}" y2="#{q}" stroke="#{e.(stroke)}" stroke-width="#{width}") +
+           (k.odd? ? %( stroke-dasharray="#{dash}"/>) : '/>')
+       end.join("\n  ")
+     end %>
+  <%= track.(line_x, row_y.(0), row_y.(last), 0, last, color, 23.62) %>
   <%# Same-kind routes alongside: a lane over each run, joining just above its first stop
       and leaving just below its last, with its badge where it leaves. %>
   <% ending = Hash.new { |h, k| h[k] = [] } %>
@@ -148,7 +159,7 @@ viewBox="0 0 3508 2480.4"
        y1 = a.zero? ? row_y.(0) : (row_y.(a) - 45 * text_scale).round(2)
        y2 = b == last ? row_y.(last) : (row_y.(b) + 38.4 * text_scale).round(2)
        ending[b] << slot unless b == last %>
-  <line x1="<%= lane_x.(slot) %>" y1="<%= y1 %>" x2="<%= lane_x.(slot) %>" y2="<%= y2 %>" stroke="<%= e.(lane[:route]['color']) %>" stroke-width="17.72"/>
+  <%= track.(lane_x.(slot), y1, y2, a, b, lane[:route]['color'], 17.72) %>
   <% end %>
   <% end %>
   <%# Badges leaving at one stop step down to the left; past two, a badge's width apart and
@@ -165,10 +176,7 @@ viewBox="0 0 3508 2480.4"
   <%# Each stop's marker, with the other electric kind's interchanges to its left: badges,
       the kind's pictogram, and a dotted lead to the marker. %>
   <% stop_rows.each_with_index do |transfers, i| left = pill_left.(i); cy = row_y.(i) %>
-  <% if sheet_rows[i]['gap'] %>
-  <% [-1, 0, 1].each do |k| %>
-  <circle cx="<%= line_x %>" cy="<%= (cy + 30 * k * text_scale).round(2) %>" r="<%= (6 * text_scale).round(2) %>" class="fil2"/>
-  <% end; next end %>
+  <% next if sheet_rows[i]['gap'] %>
   <rect x="<%= (left - 14.76).round(2) %>" y="<%= (cy - 14.76).round(2) %>" width="<%= (line_x - left + 29.52).round(2) %>" height="29.52" rx="14.76" class="fil2 str9"/>
   <% groups = other_electric(route, transfers + Array(sheet_rows[i]['nearby']),
                              lanes.select { |l| at_row.(l, i) }.map { |l| l[:route]['route'] }); next if groups.empty? %>
