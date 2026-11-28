@@ -334,8 +334,9 @@ end
 
 # The sheet's stop list stays readable up to MAX_NEXT_STOPS rows; a longer line keeps its
 # first and last stops and gives up the middle to a gap row. A line that starts and ends in
-# quiet suburbs instead keeps a few stops at each end and the window between them holding the
-# most interchanges, with a gap row on either side. Gap rows carry the routes running on both
+# quiet suburbs instead keeps a few stops at each end and an island between them: the stop
+# with the most interchanges and one stop either side, or two islands when two stops share
+# the most, each with a gap row on either side. Gap rows carry the routes running on both
 # sides of them so their lanes go on across.
 MAX_NEXT_STOPS = 15
 EDGE_STOPS = 3
@@ -347,10 +348,13 @@ def elide_middle(stops)
   keep = (MAX_NEXT_STOPS - 1) / 2
   single = [0...keep, (stops.length - (MAX_NEXT_STOPS - 1 - keep))...stops.length]
 
-  window = MAX_NEXT_STOPS - 2 * EDGE_STOPS - 2
-  middle = ((EDGE_STOPS + 1)..(stops.length - EDGE_STOPS - window - 1)).map { |at| at...(at + window) }
-                                                                       .max_by { |r| [interchanges.(r), -r.begin] }
-  double = [0...EDGE_STOPS, middle, (stops.length - EDGE_STOPS)...stops.length]
+  # A hub's island keeps a hidden stop between it and the ends, and two islands one between them.
+  count = ->(at) { stops[at]['transfers'].length }
+  hubs = ((EDGE_STOPS + 2)..(stops.length - EDGE_STOPS - 3)).sort_by { |at| [-count.(at), -interchanges.((at - 1)..(at + 1)), at] }
+  first = hubs.first
+  second = hubs.find { |at| count.(at) == count.(first) && (at - first).abs > 3 }
+  islands = [first, second].compact.sort.map { |at| (at - 1)..(at + 1) }
+  double = [0...EDGE_STOPS, *islands, (stops.length - EDGE_STOPS)...stops.length]
 
   pieces = double.sum(&interchanges) > single.sum(&interchanges) ? double : single
   pieces.map { |r| stops[r] }.reduce { |rows, piece| [*rows, gap_row(rows.last, piece.first), *piece] }

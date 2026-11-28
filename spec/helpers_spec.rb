@@ -461,10 +461,22 @@ RSpec.describe '#schedule_for' do
     expect(rows[7]).to include('gap' => true)
   end
 
-  it 'keeps the interchange-dense middle of a line that starts and ends in quiet suburbs' do
+  def routes(n) = (1..n).map { |i| { 'route' => "Т#{i}", 'vehicle_type' => 'tram' } }
+
+  it 'builds an island around the stop with the most interchanges and its two neighbours' do
+    rows = sheet_for(40, ->(c) { { 19 => routes(1), 20 => routes(3), 22 => routes(2) }.fetch(c, []) })[:next_stops]
+    expect(rows.map { |s| s['code'] }).to eq([1, 2, 3, nil, 19, 20, 21, nil, 38, 39, 40])
+    expect(rows.values_at(3, 7)).to all(include('gap' => true))
+  end
+
+  it 'builds two islands when two stops share the most interchanges' do
+    rows = sheet_for(40, ->(c) { [12, 28].include?(c) ? routes(2) : [] })[:next_stops]
+    expect(rows.map { |s| s['code'] }).to eq([1, 2, 3, nil, 11, 12, 13, nil, 27, 28, 29, nil, 38, 39, 40])
+  end
+
+  it 'picks tied stops whose neighbours hold the most interchanges, a gap apart' do
     rows = sheet_for(40, ->(c) { c.between?(15, 25) ? [tram] : [] })[:next_stops]
-    expect(rows.map { |s| s['code'] }).to eq([1, 2, 3, nil, *15..21, nil, 38, 39, 40])
-    expect(rows.values_at(3, 11)).to all(include('gap' => true))
+    expect(rows.map { |s| s['code'] }).to eq([1, 2, 3, nil, 15, 16, 17, nil, 19, 20, 21, nil, 38, 39, 40])
   end
 
   it 'keeps the single middle cut when the ends hold as many interchanges' do
