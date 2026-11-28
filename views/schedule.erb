@@ -211,9 +211,9 @@ viewBox="0 0 3508 2480.4"
      if s['gap'] %>
   <text x="2869.92" y="<%= y %>" class="fil4" style="font-size:<%= (75 * text_scale).round(2) %>px">…</text>
   <% next end
-     fit = [1.0, name_room / natgrotesk_width(s['name'], 58.33)].min
      digits = s['minutes'].to_s.length
      width = 73.23 + 16.54 * (digits - 1)
+     fit = [1.0, (name_room - 18 - width) / natgrotesk_width(s['name'], 58.33)].min
      offset = 34.3 + 17 * (digits - 1)
      eng = eng_name_for(s['code'], nil) %>
   <g transform="translate(2869.92 <%= y %>) scale(<%= text_scale.round(4) %>)">

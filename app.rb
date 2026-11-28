@@ -327,6 +327,10 @@ def schedule_for(stop_code, transfer, route)
     { 'name' => to['name'], 'code' => to['code'], 'minutes' => [1, (walked / METRES_PER_MINUTE).round].max,
       'loc' => to['loc'], 'transfers' => Array(to['transfers']) }
   end
+  # A line often ends on two same-named stops (arrival and terminus): list it once, as the last.
+  next_stops = next_stops.chunk_while { |a, b| a['name'] == b['name'] }.map do |run|
+    run.last.merge('transfers' => run.flat_map { |s| s['transfers'] }.uniq { |t| t['route'] })
+  end
 
   here = { 'code' => stops[at]['code'], 'loc' => stops[at]['loc'], 'transfers' => Array(stops[at]['transfers']) }
   { departures: departures, next_stops: skip_suburbs(next_stops, here), here: here }

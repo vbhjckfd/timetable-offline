@@ -703,6 +703,23 @@ RSpec.describe App do
       expect(body.scan('>…<').length).to eq(2)
     end
 
+    it 'lists a stop once when the line ends on two same-named stops' do
+      stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13]),
+                     route_stop(81, 'Остряниці', 49.804),
+                     route_stop(82, 'Залізничний вокзал Підзамче', 49.808),
+                     route_stop(83, 'Залізничний вокзал Підзамче', 49.8082)])
+      get "/#{STOP_CODE}/schedule"
+      expect(last_response.body.scan('Залізничний вокзал Підзамче').length).to eq(1)
+    end
+
+    it 'keeps the minutes badge of a long stop name inside the sheet' do
+      stub_route(7, [route_stop(80, 'Стрийський ринок', 49.8, %w[06:13]),
+                     route_stop(81, 'Палац культури Гната Хоткевича', 49.85)])
+      get "/#{STOP_CODE}/schedule"
+      x, w = last_response.body.match(/translate\(([\d.]+) -41\.7\)">\s*<rect width="([\d.]+)"/).captures.map(&:to_f)
+      expect(x + w).to be <= 3480 - 2869.92
+    end
+
     it 'splits the weekend into Saturday and Sunday when they run different timetables' do
       first = route_stop(80, 'Стрийський ринок', 49.8, %w[06:13])
       first['schedule'].merge!('saturday' => %w[07:41], 'sunday' => %w[08:52], 'weekend' => %w[07:41 08:52])
