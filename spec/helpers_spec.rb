@@ -461,6 +461,17 @@ RSpec.describe '#schedule_for' do
     expect(rows[7]).to include('gap' => true)
   end
 
+  it 'keeps the interchange-dense middle of a line that starts and ends in quiet suburbs' do
+    rows = sheet_for(40, ->(c) { c.between?(15, 25) ? [tram] : [] })[:next_stops]
+    expect(rows.map { |s| s['code'] }).to eq([1, 2, 3, nil, *15..21, nil, 38, 39, 40])
+    expect(rows.values_at(3, 11)).to all(include('gap' => true))
+  end
+
+  it 'keeps the single middle cut when the ends hold as many interchanges' do
+    rows = sheet_for(40, ->(c) { c <= 7 || c >= 34 ? [tram] : [] })[:next_stops]
+    expect(rows.map { |s| s['code'] }).to eq([*1..7, nil, *34..40])
+  end
+
   it 'carries a lane across the gap only when it runs on both sides' do
     rows = sheet_for(40, ->(c) { c.between?(5, 36) ? [tram] : [] })[:next_stops]
     expect(rows[7]['transfers']).to eq([tram])

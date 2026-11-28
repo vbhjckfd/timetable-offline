@@ -333,18 +333,32 @@ def schedule_for(stop_code, transfer, route)
 end
 
 # The sheet's stop list stays readable up to MAX_NEXT_STOPS rows; a longer line keeps its
-# first and last stops and gives up the middle to a gap row, which carries the routes running
-# on both sides of it so their lanes go on across.
+# first and last stops and gives up the middle to a gap row. A line that starts and ends in
+# quiet suburbs instead keeps a few stops at each end and the window between them holding the
+# most interchanges, with a gap row on either side. Gap rows carry the routes running on both
+# sides of them so their lanes go on across.
 MAX_NEXT_STOPS = 15
+EDGE_STOPS = 3
 
 def elide_middle(stops)
   return stops if stops.length <= MAX_NEXT_STOPS
 
+  interchanges = ->(range) { stops[range].sum { |s| s['transfers'].length } }
   keep = (MAX_NEXT_STOPS - 1) / 2
-  head = stops.first(keep)
-  tail = stops.last(MAX_NEXT_STOPS - 1 - keep)
-  after = tail.first['transfers'].map { |t| t['route'] }
-  [*head, { 'gap' => true, 'transfers' => head.last['transfers'].select { |t| after.include?(t['route']) } }, *tail]
+  single = [0...keep, (stops.length - (MAX_NEXT_STOPS - 1 - keep))...stops.length]
+
+  window = MAX_NEXT_STOPS - 2 * EDGE_STOPS - 2
+  middle = ((EDGE_STOPS + 1)..(stops.length - EDGE_STOPS - window - 1)).map { |at| at...(at + window) }
+                                                                       .max_by { |r| [interchanges.(r), -r.begin] }
+  double = [0...EDGE_STOPS, middle, (stops.length - EDGE_STOPS)...stops.length]
+
+  pieces = double.sum(&interchanges) > single.sum(&interchanges) ? double : single
+  pieces.map { |r| stops[r] }.reduce { |rows, piece| [*rows, gap_row(rows.last, piece.first), *piece] }
+end
+
+def gap_row(before, after)
+  routes = after['transfers'].map { |t| t['route'] }
+  { 'gap' => true, 'transfers' => before['transfers'].select { |t| routes.include?(t['route']) } }
 end
 
 ELECTRIC = %i[tram trol].freeze
