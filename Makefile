@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := up
-.PHONY: up build-gemfile build test deploy
+.PHONY: up build-gemfile build test deploy clear-cache
 
 PROJECT := timetable-252615
 REGION  := europe-north1
@@ -30,7 +30,13 @@ deploy: build
 	gcloud run services describe $(SERVICE) \
 		--project $(PROJECT) --region $(REGION) \
 		--format 'value(status.url,status.latestReadyRevisionName)'
+	$(MAKE) clear-cache
 
 # Runs build-gemfilelock.sh, build.sh, then docker-compose up --build.
 up: build-gemfile build
 	docker-compose up --build
+
+# Purge only responses tagged Cache-Tag: svg; a full purge would drop other hosts in the zone.
+CLOUDFLARE_CACHE_CLEAR_URL ?= https://drop-cloudflare-cache-1041251696619.us-central1.run.app
+clear-cache:
+	curl -sS "$(CLOUDFLARE_CACHE_CLEAR_URL)?tags=svg"
