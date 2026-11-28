@@ -53,7 +53,7 @@ The green you-are-here pin sits on the stop's own marker. The drawing has no tex
 
 ### `GET /:code/schedule` — departures from a terminal stop
 
-A4 landscape sheet (3508×2480) for one route at its terminal stop: hours by minutes for workdays and weekends, and the stops ahead with minutes to each plus transfer badges. `?route=Т03` picks the route, otherwise the first one with departures here. 404 when the stop is not a terminal of any of its routes, since the API carries departures only there. Minutes to later stops are estimated from straight-line distance at 215 m/min; the API has no running times. Saturday and Sunday are merged under "weekend".
+A4 landscape sheet (3508×2480) for one route at its terminal stop: hours by minutes for workdays and weekends, and the stops ahead with minutes to each plus transfer badges. `?route=Т03` picks the route, otherwise the first one with departures here. 404 when the stop is not a terminal of any of its routes, since the API carries departures only there. Minutes to later stops are estimated from straight-line distance at 215 m/min; the API has no running times. Saturday and Sunday share one "weekend" column, or get a column each on routes where their timetables differ (the API's `weekend` is the two merged).
 
 ### `GET /:code/panel` — the plate inside the shelter
 

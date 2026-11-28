@@ -300,7 +300,7 @@ def metres_between(a, b)
 end
 
 # A stop sheet for one route: the stops from this one to the end of the line with minutes
-# to each, and the departures from here, split into workday and weekend by hour. nil when
+# to each, and the departures from here by hour, per day column (see below). nil when
 # the route does not leave from this stop, as the API carries departures only for a line's
 # terminal stops.
 def schedule_for(stop_code, transfer, route)
@@ -308,9 +308,16 @@ def schedule_for(stop_code, transfer, route)
   at = stops.index { |s| s['code'].to_i == stop_code.to_i }
   return nil if at.nil?
 
-  departures = %w[workday weekend].to_h do |day|
-    by_hour = Array(stops[at].dig('schedule', day)).group_by { |t| t[0, 2].to_i }
-    [day, by_hour.transform_values { |ts| ts.map { |t| t[3, 2].to_i }.sort }]
+  # The API's weekend is Saturday and Sunday merged, so a route whose two days differ gets
+  # a column for each; otherwise one weekend column.
+  schedule = stops[at]['schedule'] || {}
+  saturday = schedule['saturday'] || schedule['weekend']
+  sunday = schedule['sunday'] || schedule['weekend']
+  days = { 'workday' => schedule['workday'] }
+  days.merge!(saturday == sunday ? { 'weekend' => saturday } : { 'saturday' => saturday, 'sunday' => sunday })
+
+  departures = days.transform_values do |times|
+    Array(times).group_by { |t| t[0, 2].to_i }.transform_values { |ts| ts.map { |t| t[3, 2].to_i }.sort }
   end
   return nil if departures.values.all?(&:empty?)
 

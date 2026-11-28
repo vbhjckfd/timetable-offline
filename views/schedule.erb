@@ -26,13 +26,21 @@
   row_step = [87.5, 1487.5 / [rows.length - 1, 1].max].min
   # A column with more minutes in an hour than the sheet's nine narrows them to fit.
   per_hour = sheet[:departures].values.flat_map { |by_hour| by_hour.values.map(&:length) }.max
-  minute_step = [94.85, 890.0 / per_hour].min
+  # Two day columns share the sheet's 2259 px as drawn; a route whose Saturday and Sunday
+  # differ gets three, each a third as wide with its minutes squeezed to fit.
+  labels = {
+    'workday' => ['Робочі дні', 'Working days'], 'weekend' => %w[Вихідні Weekend],
+    'saturday' => %w[Субота Saturday], 'sunday' => %w[Неділя Sunday]
+  }
+  col_width = 2259.0 / sheet[:departures].length
+  minute_step = [94.85, (col_width - 239.5) / per_hour].min
   minute_size = 58.33 * minute_step / 94.85
 
-  columns = [
-    { day: 'workday', ua: 'Робочі дні', en: 'Working days', dx: 0, divider: 346.78, rule: [251.0, 1275.0] },
-    { day: 'weekend', ua: 'Вихідні', en: 'Weekend', dx: 1129.5, divider: 1480.68, rule: [1385.0, 2409.0] }
-  ]
+  columns = sheet[:departures].keys.each_with_index.map do |day, i|
+    dx = (col_width * i).round(2)
+    { day: day, ua: labels[day][0], en: labels[day][1], dx: dx,
+      divider: (346.78 + dx).round(2), rule: [251.0 + dx, (251.0 + dx + col_width - 105.5).round(2)] }
+  end
 
   # The stop list: the sheet's 186 px between names, squeezed (with the text) for long lines.
   pitch = [186.12, 1675.14 / [stops.length - 1, 1].max].min

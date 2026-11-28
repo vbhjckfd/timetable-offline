@@ -669,6 +669,24 @@ RSpec.describe App do
       expect(last_response.body).to include('Наступна', '>13<', '>25<', '>50<')
     end
 
+    it 'splits the weekend into Saturday and Sunday when they run different timetables' do
+      first = route_stop(80, 'Стрийський ринок', 49.8, %w[06:13])
+      first['schedule'].merge!('saturday' => %w[07:41], 'sunday' => %w[08:52], 'weekend' => %w[07:41 08:52])
+      stub_route(7, [first, route_stop(81, 'Наступна', 49.8043)])
+      get "/#{STOP_CODE}/schedule"
+      expect(last_response.body).to include('Субота', 'Неділя', '>41<', '>52<')
+      expect(last_response.body).not_to include('Вихідні')
+    end
+
+    it 'keeps one weekend column when Saturday and Sunday match' do
+      first = route_stop(80, 'Стрийський ринок', 49.8, %w[06:13])
+      first['schedule'].merge!('saturday' => %w[07:41], 'sunday' => %w[07:41], 'weekend' => %w[07:41])
+      stub_route(7, [first, route_stop(81, 'Наступна', 49.8043)])
+      get "/#{STOP_CODE}/schedule"
+      expect(last_response.body).to include('Вихідні', '>41<')
+      expect(last_response.body).not_to include('Субота')
+    end
+
     def stub_closest(stops)
       stub_request(:get, %r{\A#{API_BASE}/closest}).to_return(
         status: 200, body: stops.to_json, headers: { 'Content-Type' => 'application/json' })
