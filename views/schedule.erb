@@ -176,9 +176,11 @@ viewBox="0 0 3508 2480.4"
    <line x1="-6" y1="0" x2="-24.4" y2="0" stroke="#9DA7B3" stroke-width="2.36" stroke-dasharray="2.36 2.36"/>
    <% x = -26.2; groups.each do |type, ts| icon, w = pictograms[type] %>
    <image xlink:href="<%= icon_href(icon) %>" x="<%= (x - w).round(2) %>" y="-38" width="<%= w %>" height="68" preserveAspectRatio="xMidYMax meet"/>
-   <% x -= w + 8.6; ts.first(6).each do |t| %>
-   <g transform="translate(<%= (x - 25.38).round(2) %> 3.7)"><%= badge.(t) %></g>
-   <% x -= 59.06; end; x -= 8 %>
+   <%# Badges in two lanes, filled a column at a time; a column's lone badge sits centred. %>
+   <% x -= w + 8.6; ts.first(6).each_slice(2) do |col| %>
+   <% col.each_with_index do |t, k| y = col.length == 1 ? 3.7 : 3.7 + 34 * (2 * k - 1) %>
+   <g transform="translate(<%= (x - 25.38).round(2) %> <%= y.round(2) %>)"><%= badge.(t) %></g>
+   <% end; x -= 59.06; end; x -= 8 %>
    <% end %>
   </g>
   <% end %>
