@@ -143,8 +143,11 @@ viewBox="0 0 3508 2480.4"
   <line x1="<%= lane_x.(slot) %>" y1="<%= y1 %>" x2="<%= lane_x.(slot) %>" y2="<%= y2 %>" stroke="<%= e.(lane[:route]['color']) %>" stroke-width="17.72"/>
   <% end %>
   <% end %>
-  <% ending.each do |b, slots| slots.sort.each_with_index do |slot, k| %>
-  <g transform="translate(<%= (lane_x.(slots.min) - 11.8 - 38 * k * text_scale).round(2) %> <%= (row_y.(b) + (77.7 + 37.8 * k) * text_scale).round(2) %>) scale(<%= text_scale.round(4) %>)"><%= badge.(lanes[slot][:route]) %></g>
+  <%# Badges leaving at one stop step down to the left; past two, a badge's width apart and
+      less steeply, so the last stays above the next stop's interchanges. %>
+  <% ending.each do |b, slots| dx, dy = slots.length > 2 ? [59.06, 37.8 / (slots.length - 1)] : [38, 37.8] %>
+  <% slots.sort.each_with_index do |slot, k| %>
+  <g transform="translate(<%= (lane_x.(slots.min) - 11.8 - dx * k * text_scale).round(2) %> <%= (row_y.(b) + (77.7 + dy * k) * text_scale).round(2) %>) scale(<%= text_scale.round(4) %>)"><%= badge.(lanes[slot][:route]) %></g>
   <% end end %>
   <%# The routes that reach the end of the line, the sheet's own first, under its last stop. %>
   <% [route, *lanes.select { |l| at_row.(l, last) }.map { |l| l[:route] }].each_with_index do |r, k| %>
