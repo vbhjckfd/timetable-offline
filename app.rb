@@ -371,12 +371,13 @@ EDGE_STOPS = 3
 def elide_middle(stops)
   return stops if stops.length <= MAX_NEXT_STOPS
 
-  interchanges = ->(range) { stops[range].sum { |s| s['transfers'].length } }
+  # Only trams and trolleybuses count: the sheet never draws buses.
+  count = ->(at) { stops[at]['transfers'].count { |t| ELECTRIC.include?(vehicle_type_of(t)) } }
+  interchanges = ->(range) { range.sum(&count) }
   keep = (MAX_NEXT_STOPS - 1) / 2
   single = [0...keep, (stops.length - (MAX_NEXT_STOPS - 1 - keep))...stops.length]
 
   # A hub's island keeps a hidden stop between it and the ends, and two islands one between them.
-  count = ->(at) { stops[at]['transfers'].length }
   hubs = ((EDGE_STOPS + 2)..(stops.length - EDGE_STOPS - 3)).sort_by { |at| [-count.(at), -interchanges.((at - 1)..(at + 1)), at] }
   first = hubs.first
   second = hubs.find { |at| count.(at) == count.(first) && (at - first).abs > 3 }

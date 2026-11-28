@@ -469,6 +469,12 @@ RSpec.describe '#schedule_for' do
     expect(rows.values_at(3, 7)).to all(include('gap' => true))
   end
 
+  it 'counts only tram and trolleybus interchanges, which the sheet draws, when placing the island' do
+    buses = (1..9).map { |i| { 'route' => "А#{i}", 'vehicle_type' => 'bus' } }
+    rows = sheet_for(40, ->(c) { { 20 => [tram], 30 => buses }.fetch(c, []) })[:next_stops]
+    expect(rows.map { |s| s['code'] }).to eq([1, 2, 3, nil, 19, 20, 21, nil, 38, 39, 40])
+  end
+
   it 'builds two islands when two stops share the most interchanges' do
     rows = sheet_for(40, ->(c) { [12, 28].include?(c) ? routes(2) : [] })[:next_stops]
     expect(rows.map { |s| s['code'] }).to eq([1, 2, 3, nil, 11, 12, 13, nil, 27, 28, 29, nil, 38, 39, 40])
